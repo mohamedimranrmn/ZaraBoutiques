@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import Lottie from 'lottie-react'
 import { motion } from 'framer-motion'
-import { orderSuccessAnimation } from '../../../assets'
+import { ecommerceOutlookAnimation } from '../../../assets'
 
 export const OtpVerfication = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
@@ -172,7 +172,7 @@ export const OtpVerfication = () => {
                     }}
                 >
                     <Lottie
-                        animationData={orderSuccessAnimation}
+                        animationData={ecommerceOutlookAnimation}
                         style={{
                             width: '100%',
                             height: '100%',
