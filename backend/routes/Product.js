@@ -3,6 +3,7 @@ const productController = require("../controllers/Product");
 const router = express.Router();
 
 // STATIC ROUTES FIRST
+router.get("/stats", productController.getStats); // <-- MUST BE FIRST
 router.patch("/undelete/:id", productController.undeleteById);
 router.delete("/force/:id", productController.forceDeleteById);
 router.get("/stock/:id", productController.getStockById);

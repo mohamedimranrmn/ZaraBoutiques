@@ -1,16 +1,23 @@
-// backend/controllers/Product.js
 const Product = require("../models/Product");
+const Cart = require("../models/Cart");
+const Wishlist = require("../models/Wishlist");
+const Review = require("../models/Review");
 
 /* ============================================================
    CREATE PRODUCT
-   ============================================================ */
+============================================================ */
 exports.create = async (req, res) => {
     try {
-        const created = new Product(req.body);
-        await created.save();
-        res.status(201).json(created);
+        const created = await Product.create(req.body);
+
+        const populated = await Product.findById(created._id)
+            .populate("brand")
+            .populate("category");
+
+        return res.status(201).json(populated);
+
     } catch (error) {
-        console.log("Product create error:", error);
+        console.error("Product create error:", error);
         return res.status(500).json({
             message: "Error adding product, please try again later"
         });
@@ -18,120 +25,144 @@ exports.create = async (req, res) => {
 };
 
 /* ============================================================
-   GET ALL PRODUCTS (Filters + Search + Sorting + Pagination)
-   ============================================================ */
+   SOFT DELETE PRODUCT (safe delete)
+============================================================ */
+exports.softDeleteProduct = async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        const product = await Product.findByIdAndUpdate(
+            id,
+            { isDeleted: true },
+            { new: true }
+        );
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        // Cleanup relations
+        await Cart.deleteMany({ product: id });
+        await Wishlist.deleteMany({ product: id });
+        await Review.deleteMany({ product: id });
+
+        return res.status(200).json({
+            message: "Product deleted and dependencies cleaned",
+            product
+        });
+
+    } catch (err) {
+        console.error("Soft delete product error:", err);
+        return res.status(500).json({
+            message: "Failed to delete product"
+        });
+    }
+};
+
+/* ============================================================
+   GET ALL PRODUCTS (filter + search + pagination)
+============================================================ */
 exports.getAll = async (req, res) => {
     try {
-        const filter = {};
+        let filter = {};
         const sort = {};
         let skip = 0;
         let limit = 0;
 
-        // Search query (multi-field: title, brand.name, category.name)
-        if (req.query.search) {
-            const searchRegex = new RegExp(req.query.search, "i");
-            filter.$or = [
-                { title: searchRegex },
-                { description: searchRegex }
-            ];
-        }
+        // Hide deleted for normal users
+        if (req.query.user) filter.isDeleted = false;
 
-        // Brand filter
-        if (req.query.brand) {
-            filter.brand = { $in: req.query.brand };
-        }
-
-        // Category filter
-        if (req.query.category) {
-            filter.category = { $in: req.query.category };
-        }
-
-        // isDeleted filter (admin / frontend)
         if (req.query.isDeleted !== undefined) {
             filter.isDeleted = req.query.isDeleted === "true";
-        } else if (req.query.user) {
-            // hide deleted for normal frontend users
-            filter.isDeleted = false;
         }
 
-        // Sorting
+        // Search support
+        if (req.query.search) {
+            const s = new RegExp(req.query.search, "i");
+            filter.$or = [{ title: s }, { description: s }];
+        }
+
+        // Filters
+        if (req.query.brand) filter.brand = { $in: req.query.brand };
+        if (req.query.category) filter.category = { $in: req.query.category };
+
+        // Sort
         if (req.query.sort) {
             sort[req.query.sort] = req.query.order === "desc" ? -1 : 1;
         }
 
         // Pagination
         if (req.query.page && req.query.limit) {
-            const pageSize = Number(req.query.limit);
             const page = Number(req.query.page);
-            skip = pageSize * (page - 1);
+            const pageSize = Number(req.query.limit);
+            skip = (page - 1) * pageSize;
             limit = pageSize;
         }
 
-        // First, get all matching products with populated fields for search
+        const totalDocs = await Product.countDocuments(filter);
+
         let query = Product.find(filter)
             .populate("brand")
             .populate("category")
             .sort(sort);
 
-        // If there's a search term, we need to filter after population
-        if (req.query.search) {
-            const allResults = await query.exec();
-            const searchRegex = new RegExp(req.query.search, "i");
-
-            // Filter results based on populated brand and category names
-            const filteredResults = allResults.filter(product => {
-                const matchesTitle = searchRegex.test(product.title);
-                const matchesDescription = searchRegex.test(product.description);
-                const matchesBrand = product.brand?.name && searchRegex.test(product.brand.name);
-                const matchesCategory = product.category?.name && searchRegex.test(product.category.name);
-
-                return matchesTitle || matchesDescription || matchesBrand || matchesCategory;
-            });
-
-            const totalDocs = filteredResults.length;
-            const results = filteredResults.slice(skip, skip + limit || filteredResults.length);
-
-            res.set("X-Total-Count", totalDocs);
-            return res.status(200).json(results);
-        }
-
-        // No search - proceed normally
-        const totalDocs = await Product.countDocuments(filter);
-
-        if (limit > 0) {
-            query = query.skip(skip).limit(limit);
-        }
+        if (limit) query = query.skip(skip).limit(limit);
 
         const results = await query.exec();
 
         res.set("X-Total-Count", totalDocs);
-        res.status(200).json(results);
+        return res.status(200).json(results);
+
     } catch (error) {
-        console.log("Product getAll error:", error);
-        res.status(500).json({
+        console.error("Product getAll error:", error);
+        return res.status(500).json({
             message: "Error fetching products, please try again later"
         });
     }
 };
 
+exports.getStats = async (req, res) => {
+    try {
+        const total = await Product.countDocuments();
+        const deleted = await Product.countDocuments({ isDeleted: true });
+        const active = await Product.countDocuments({ isDeleted: false });
+
+        return res.status(200).json({ total, active, deleted });
+    } catch (err) {
+        console.error("Product stats error:", err);
+        return res.status(500).json({ message: "Failed to fetch product stats" });
+    }
+};
+
 /* ============================================================
-   GET PRODUCT BY ID
-   ============================================================ */
+   GET PRODUCT BY ID - ✅ FIXED
+============================================================ */
 exports.getById = async (req, res) => {
     try {
-        const { id } = req.params;
-        const result = await Product.findById(id)
+        const id = req.params.id;
+
+        const product = await Product.findById(id)
             .populate("brand")
             .populate("category");
 
-        if (!result) {
+        if (!product) {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        res.status(200).json(result);
+        // ✅ FIXED: Return product with isDeleted flag instead of 410
+        // This allows frontend to show unavailable state with product details
+        if (product.isDeleted && !req.query.admin) {
+            return res.status(200).json({
+                ...product.toObject(),
+                isDeleted: true  // Ensure flag is visible to frontend
+            });
+        }
+
+        return res.status(200).json(product);
+
     } catch (error) {
-        console.log("Product getById error:", error);
-        res.status(500).json({
+        console.error("Product getById error:", error);
+        return res.status(500).json({
             message: "Error getting product details, please try again later"
         });
     }
@@ -139,118 +170,116 @@ exports.getById = async (req, res) => {
 
 /* ============================================================
    UPDATE PRODUCT
-   ============================================================ */
+============================================================ */
 exports.updateById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id;
+
         const updated = await Product.findByIdAndUpdate(id, req.body, {
-            new: true,
-        });
+            new: true
+        })
+            .populate("brand")
+            .populate("category");
 
         if (!updated) {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        res.status(200).json(updated);
+        return res.status(200).json(updated);
+
     } catch (error) {
-        console.log("Product update error:", error);
-        res.status(500).json({
+        console.error("Product update error:", error);
+        return res.status(500).json({
             message: "Error updating product, please try again later"
         });
     }
 };
 
 /* ============================================================
-   UNDELETE PRODUCT (RESTORE)
-   ============================================================ */
+   RESTORE PRODUCT
+============================================================ */
 exports.undeleteById = async (req, res) => {
     try {
-        const { id } = req.params;
-        const unDeleted = await Product.findByIdAndUpdate(
+        const id = req.params.id;
+
+        const restored = await Product.findByIdAndUpdate(
             id,
             { isDeleted: false },
             { new: true }
-        ).populate("brand");
+        )
+            .populate("brand")
+            .populate("category");
 
-        if (!unDeleted) {
+        if (!restored) {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        res.status(200).json(unDeleted);
+        return res.status(200).json(restored);
+
     } catch (error) {
-        console.log("Product undelete error:", error);
-        res.status(500).json({
-            message: "Error restoring product, please try again later"
+        console.error("Product undelete error:", error);
+        return res.status(500).json({
+            message: "Error restoring product"
         });
     }
 };
 
 /* ============================================================
-   GET STOCK BY PRODUCT ID (for live refresh)
-   ============================================================ */
+   GET STOCK ONLY
+============================================================ */
 exports.getStockById = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id).select("stockQuantity");
-        if (!product) {
-            return res.status(404).json({ message: "Product not found" });
-        }
-        res.status(200).json({ stockQuantity: product.stockQuantity });
-    } catch (error) {
-        console.log("getStockById error:", error);
-        res.status(500).json({ message: "Error fetching stock" });
-    }
-};
+        const doc = await Product.findById(req.params.id)
+            .select("stockQuantity");
 
-/* ============================================================
-   SOFT DELETE PRODUCT
-   ============================================================ */
-exports.deleteById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deleted = await Product.findByIdAndUpdate(
-            id,
-            { isDeleted: true },
-            { new: true }
-        ).populate("brand");
-
-        if (!deleted) {
+        if (!doc) {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        res.status(200).json(deleted);
+        return res.status(200).json({ stockQuantity: doc.stockQuantity });
+
     } catch (error) {
-        console.log("Product soft delete error:", error);
-        res.status(500).json({
-            message: "Error deleting product, please try again later"
+        console.error("getStockById error:", error);
+        return res.status(500).json({
+            message: "Error fetching stock"
         });
     }
 };
 
 /* ============================================================
-   FORCE DELETE PRODUCT (PERMANENT)
-   ============================================================ */
+   ALIAS: soft delete
+============================================================ */
+exports.deleteById = exports.softDeleteProduct;
+
+/* ============================================================
+   FORCE DELETE PRODUCT
+============================================================ */
 exports.forceDeleteById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id;
 
-        const deletedProduct = await Product.findByIdAndDelete(id);
+        const removed = await Product.findByIdAndDelete(id);
 
-        if (!deletedProduct) {
+        if (!removed) {
             return res.status(404).json({
                 message: "Product not found"
             });
         }
 
+        await Cart.deleteMany({ product: id });
+        await Wishlist.deleteMany({ product: id });
+        await Review.deleteMany({ product: id });
+
         return res.status(200).json({
             _id: id,
             message: "Product permanently deleted",
-            deletedProduct
+            removed
         });
 
     } catch (error) {
-        console.log("Product force delete error:", error);
+        console.error("Product force delete error:", error);
         return res.status(500).json({
-            message: "Error permanently deleting product, please try again later"
+            message: "Error permanently deleting product"
         });
     }
 };

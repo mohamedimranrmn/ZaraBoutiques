@@ -1,56 +1,131 @@
-const Wishlist = require("../models/Wishlist")
+const Wishlist = require("../models/Wishlist");
+const Product = require("../models/Product");
 
-exports.create=async(req,res)=>{
+/* ============================================================
+   CREATE WISHLIST ITEM
+   ============================================================ */
+exports.create = async (req, res) => {
     try {
-        const created=await new Wishlist(req.body).populate({path:"product",populate:["brand"]})
-        await created.save()
-        res.status(201).json(created)
+        const created = await Wishlist.create(req.body);
+
+        const populated = await Wishlist.findById(created._id)
+            .populate({
+                path: "product",
+                populate: { path: "brand" }
+            });
+
+        return res.status(201).json(populated);
+
     } catch (error) {
-        console.log(error);
-        res.status(500).json({message:"Error adding product to wishlist, please try again later"})
+        console.error("Wishlist create error:", error);
+        return res
+            .status(500)
+            .json({ message: "Error adding product to wishlist, please try again later" });
     }
-}
-exports.getByUserId=async(req,res)=>{
+};
+
+/* ============================================================
+   GET WISHLIST BY USER - ✅ FIXED (filters soft-deleted)
+   ============================================================ */
+exports.getByUserId = async (req, res) => {
     try {
-        const {id}=req.params
-        let skip=0
-        let limit=0
+        const userId = req.params.id;
 
-        if(req.query.page && req.query.limit){
-            const pageSize=req.query.limit
-            const page=req.query.page
+        let skip = 0;
+        let limit = 0;
 
-            skip=pageSize*(page-1)
-            limit=pageSize
+        if (req.query.page && req.query.limit) {
+            const page = Number(req.query.page);
+            const pageSize = Number(req.query.limit);
+            skip = (page - 1) * pageSize;
+            limit = pageSize;
         }
 
-        const result=await Wishlist.find({user:id}).skip(skip).limit(limit).populate({path:"product",populate:['brand']})
-        const totalResults=await Wishlist.find({user:id}).countDocuments().exec()
+        const items = await Wishlist.find({ user: userId })
+            .skip(skip)
+            .limit(limit)
+            .populate({
+                path: "product",
+                populate: { path: "brand" }
+            })
+            .lean();
 
-        res.set("X-Total-Count",totalResults)
-        res.status(200).json(result)
+        // ✅ FIXED: Filter both null AND soft-deleted products
+        const valid = items.filter((i) =>
+            i.product !== null && !i.product.isDeleted
+        );
+
+        // Auto-delete invalid references (null or soft-deleted)
+        const invalid = items.filter((i) =>
+            i.product === null || i.product?.isDeleted
+        );
+
+        if (invalid.length > 0) {
+            await Wishlist.deleteMany({
+                _id: { $in: invalid.map((i) => i._id) }
+            });
+            console.log(`Auto-removed ${invalid.length} invalid wishlist items for user ${userId}`);
+        }
+
+        // ✅ Return direct array (consistent with Cart)
+        res.set("X-Total-Count", valid.length);
+        return res.status(200).json(valid);
+
     } catch (error) {
-        console.log(error);
-        res.status(500).json({message:"Error fetching your wishlist, please try again later"})
+        console.error("Wishlist get error:", error);
+        return res
+            .status(500)
+            .json({ message: "Error fetching your wishlist, please try again later" });
     }
-}
-exports.updateById=async(req,res)=>{
+};
+
+/* ============================================================
+   UPDATE WISHLIST ITEM - ✅ FIXED (checks soft-deleted)
+   ============================================================ */
+exports.updateById = async (req, res) => {
     try {
-        const {id}=req.params
-        const updated=await Wishlist.findByIdAndUpdate(id,req.body,{new:true}).populate("product")
-        res.status(200).json(updated)
+        const id = req.params.id;
+
+        let updated = await Wishlist.findByIdAndUpdate(id, req.body, {
+            new: true
+        }).populate({
+            path: "product",
+            populate: { path: "brand" }
+        });
+
+        if (!updated) {
+            return res.status(404).json({ message: "Wishlist item not found" });
+        }
+
+        // ✅ FIXED: Check both null AND soft-deleted
+        // If product is deleted, remove wishlist item
+        if (!updated.product || updated.product.isDeleted) {
+            await Wishlist.findByIdAndDelete(id);
+            return res.status(410).json({ message: "Product no longer available" });
+        }
+
+        return res.status(200).json(updated);
+
     } catch (error) {
-        console.log(error);
-        res.status(500).json({message:"Error updating your wishlist, please try again later"})
+        console.error("Wishlist update error:", error);
+        return res
+            .status(500)
+            .json({ message: "Error updating your wishlist, please try again later" });
     }
-}
-exports.deleteById=async(req,res)=>{
+};
+
+/* ============================================================
+   DELETE WISHLIST ITEM
+   ============================================================ */
+exports.deleteById = async (req, res) => {
     try {
-        const {id}=req.params
-        const deleted=await Wishlist.findByIdAndDelete(id)
-        return res.status(200).json(deleted)
+        const deleted = await Wishlist.findByIdAndDelete(req.params.id);
+        return res.status(200).json(deleted);
+
     } catch (error) {
-        console.log(error);
-        res.status(500).json({message:"Error deleting that product from wishlist, please try again later"})
+        console.error("Wishlist delete error:", error);
+        return res
+            .status(500)
+            .json({ message: "Error deleting wishlist item, please try again later" });
     }
-}
+};

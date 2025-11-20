@@ -6,6 +6,8 @@ import { selectLoggedInUser } from '../../auth/AuthSlice';
 import {deleteReviewByIdAsync, selectReviewStatus, updateReviewByIdAsync} from '../ReviewSlice'
 import { useForm } from "react-hook-form"
 import {LoadingButton} from '@mui/lab'
+import { motion } from "framer-motion";
+
 
 export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
 
@@ -37,9 +39,10 @@ export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
     setEdit(false)
   }
 
-  const isOwnReview=userid===loggedInUser?._id 
+  const isOwnReview = userid && loggedInUser?._id && userid === loggedInUser._id;
 
-  return (
+
+    return (
     <Stack position={'relative'} p={2} rowGap={2} width={'100%'} component={Paper} borderRadius={'.8px'}>
 
         {/* user , rating and created at*/}
@@ -48,9 +51,14 @@ export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
             <Stack flexDirection={'row'} columnGap={2}>
                 <Stack> 
                         <Typography variant='h6' fontSize={"1.1rem"} fontWeight={500}>{username}</Typography>
-                        <motiondiv>
-                            <Rating size={edit?is480?'medium':'large':"small"} readOnly={!edit} onChange={(e)=>setEditRating(e.target.value)} value={edit?editRating:rating}/>
-                        </motiondiv>
+                    <motion.div>
+                        <Rating
+                            size={edit ? (is480 ? 'medium' : 'large') : 'small'}
+                            readOnly={!edit}
+                            value={edit ? editRating : rating}
+                            onChange={(event, newValue) => setEditRating(newValue)}
+                        />
+                    </motion.div>
                 </Stack>
             </Stack>
 

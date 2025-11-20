@@ -34,10 +34,50 @@ export const CartItem = ({
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const isTablet = useMediaQuery(theme.breakpoints.down("md"));
-
-    const { _id: productId, thumbnail, title, price, stockQuantity } = product || {};
-
     const [dialogOpen, setDialogOpen] = useState(false);
+    /** If product is deleted (null), show a minimal safe card */
+    if (!product) {
+        return (
+            <Card
+                elevation={0}
+                sx={{
+                    border: "1px solid",
+                    borderColor: "error.main",
+                    bgcolor: "#fff6f6",
+                    p: 2,
+                    borderRadius: 2,
+                    mb: 2
+                }}
+            >
+                <Typography fontWeight={600} color="error.main">
+                    This product is no longer available.
+                </Typography>
+
+                <IconButton
+                    onClick={() => dispatch(deleteCartItemByIdAsync(_id))}
+                    sx={{
+                        mt: 1,
+                        color: "error.main",
+                        bgcolor: alpha(theme.palette.error.main, 0.08),
+                        "&:hover": {
+                            bgcolor: alpha(theme.palette.error.main, 0.15)
+                        }
+                    }}
+                >
+                    <DeleteOutlineIcon />
+                </IconButton>
+            </Card>
+        );
+    }
+
+    /** Safe destructure */
+    const {
+        _id: productId,
+        thumbnail,
+        title,
+        price,
+        stockQuantity
+    } = product;
 
     const handleAddQty = (e) => {
         e.stopPropagation();
@@ -93,9 +133,14 @@ export const CartItem = ({
                     }
                 }}
             >
-                <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 2.5 }, "&:last-child": { pb: { xs: 1.5, sm: 2, md: 2.5 } } }}>
+                <CardContent
+                    sx={{
+                        p: { xs: 1.5, sm: 2, md: 2.5 },
+                        "&:last-child": { pb: { xs: 1.5, sm: 2, md: 2.5 } }
+                    }}
+                >
                     {isMobile ? (
-                        /* Mobile Layout - FIXED CHECKBOX CENTERING */
+                        /* ----------------------------------- MOBILE ----------------------------------- */
                         <Stack direction="row" spacing={1.5} alignItems="center">
                             {selectable && (
                                 <Checkbox
@@ -109,13 +154,11 @@ export const CartItem = ({
                                         }
                                         onSelectChange(e.target.checked);
                                     }}
-                                    sx={{
-                                        p: 0,
-                                        alignSelf: "center"
-                                    }}
+                                    sx={{ p: 0, alignSelf: "center" }}
                                 />
                             )}
 
+                            {/* Image */}
                             <Box
                                 onClick={handleImageClick}
                                 sx={{
@@ -161,9 +204,7 @@ export const CartItem = ({
                                         WebkitBoxOrient: "vertical",
                                         overflow: "hidden",
                                         lineHeight: 1.3,
-                                        "&:hover": {
-                                            color: "primary.main"
-                                        }
+                                        "&:hover": { color: "primary.main" }
                                     }}
                                 >
                                     {title}
@@ -174,9 +215,9 @@ export const CartItem = ({
                                         label={`Size: ${size}`}
                                         size="small"
                                         sx={{
-                                            width: 'fit-content',
+                                            width: "fit-content",
                                             height: 20,
-                                            fontSize: '0.7rem',
+                                            fontSize: "0.7rem",
                                             fontWeight: 600
                                         }}
                                     />
@@ -210,6 +251,7 @@ export const CartItem = ({
                                     ₹{price.toFixed(2)}
                                 </Typography>
 
+                                {/* Qty + delete */}
                                 <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: "auto" }}>
                                     <IconButton
                                         onClick={handleDelete}
@@ -218,9 +260,7 @@ export const CartItem = ({
                                             color: "error.main",
                                             bgcolor: alpha(theme.palette.error.main, 0.08),
                                             p: 0.5,
-                                            "&:hover": {
-                                                bgcolor: alpha(theme.palette.error.main, 0.15)
-                                            }
+                                            "&:hover": { bgcolor: alpha(theme.palette.error.main, 0.15) }
                                         }}
                                     >
                                         <DeleteOutlineIcon sx={{ fontSize: 18 }} />
@@ -236,11 +276,7 @@ export const CartItem = ({
                                             borderColor: "divider"
                                         }}
                                     >
-                                        <IconButton
-                                            size="small"
-                                            onClick={handleRemoveQty}
-                                            sx={{ p: 0.5 }}
-                                        >
+                                        <IconButton size="small" onClick={handleRemoveQty} sx={{ p: 0.5 }}>
                                             <RemoveIcon sx={{ fontSize: 16 }} />
                                         </IconButton>
 
@@ -269,13 +305,8 @@ export const CartItem = ({
                             </Stack>
                         </Stack>
                     ) : (
-                        /* Desktop/Tablet Layout - FIXED CHECKBOX CENTERING */
-                        <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                            sx={{ width: "100%" }}
-                        >
+                        /* ----------------------------------- DESKTOP ----------------------------------- */
+                        <Stack direction="row" spacing={2} alignItems="center" sx={{ width: "100%" }}>
                             {selectable && (
                                 <Checkbox
                                     checked={checked}
@@ -288,13 +319,11 @@ export const CartItem = ({
                                         }
                                         onSelectChange(e.target.checked);
                                     }}
-                                    sx={{
-                                        p: 0,
-                                        alignSelf: "center"
-                                    }}
+                                    sx={{ p: 0, alignSelf: "center" }}
                                 />
                             )}
 
+                            {/* Image */}
                             <Box
                                 onClick={handleImageClick}
                                 sx={{
@@ -326,12 +355,7 @@ export const CartItem = ({
                                 />
                             </Box>
 
-                            <Stack
-                                flex={1}
-                                spacing={1}
-                                minWidth={0}
-                                sx={{ justifyContent: "center" }}
-                            >
+                            <Stack flex={1} spacing={1} minWidth={0} sx={{ justifyContent: "center" }}>
                                 <Typography
                                     variant="body1"
                                     fontWeight={600}
@@ -353,9 +377,9 @@ export const CartItem = ({
                                         label={`Size: ${size}`}
                                         size="small"
                                         sx={{
-                                            width: 'fit-content',
+                                            width: "fit-content",
                                             height: 22,
-                                            fontSize: '0.75rem',
+                                            fontSize: "0.75rem",
                                             fontWeight: 600
                                         }}
                                     />
@@ -372,7 +396,7 @@ export const CartItem = ({
                                             py: 0.5,
                                             borderRadius: 1,
                                             width: "fit-content",
-                                            mt: -0.25,
+                                            mt: -0.25
                                         }}
                                     >
                                         <Typography variant="caption" fontWeight={600}>
@@ -406,13 +430,10 @@ export const CartItem = ({
                                             border: "1px solid",
                                             borderColor: "divider",
                                             py: 0.25,
-                                            px: 0.5,
+                                            px: 0.5
                                         }}
                                     >
-                                        <IconButton
-                                            onClick={handleRemoveQty}
-                                            size={isTablet ? "small" : "medium"}
-                                        >
+                                        <IconButton onClick={handleRemoveQty} size={isTablet ? "small" : "medium"}>
                                             <RemoveIcon sx={{ fontSize: { sm: 20, md: 22 } }} />
                                         </IconButton>
 
@@ -443,11 +464,7 @@ export const CartItem = ({
                                         sx={{
                                             color: "error.main",
                                             bgcolor: alpha(theme.palette.error.main, 0.08),
-                                            "&:hover": { bgcolor: alpha(theme.palette.error.main, 0.15) },
-                                            alignSelf: "center",
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
+                                            "&:hover": { bgcolor: alpha(theme.palette.error.main, 0.15) }
                                         }}
                                     >
                                         <DeleteOutlineIcon sx={{ fontSize: { sm: 20, md: 24 } }} />

@@ -19,15 +19,13 @@ import {
 import {
     resetCartItemRemoveStatus,
     selectCartItemRemoveStatus,
-    selectCartItems
+    selectCartItems,
+    deleteCartItemByIdAsync
 } from '../CartSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
-import { SHIPPING, TAXES } from '../../../constants'
-import { motion } from 'framer-motion'
 import Lottie from 'lottie-react'
 import noOrders from '../../../assets/animations/noOrders.json'
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import { OutOfStockDialog } from '../../../dialogs/OutOfStockDialog'
@@ -45,7 +43,11 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
         ? itemsOverride
         : reduxItems
 
-    const subtotalAll = items.reduce((acc, it) => acc + it.product.price * it.quantity, 0)
+    /** SAFE subtotal calculation */
+    const subtotalAll = items.reduce((acc, it) => {
+        if (!it.product) return acc
+        return acc + it.product.price * it.quantity
+    }, 0)
 
     const [selectedMap, setSelectedMap] = useState({})
     const [oosDialogOpen, setOosDialogOpen] = useState(false)
@@ -71,38 +73,41 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
 
     const onToggleSelect = (id, checked) => {
         const item = reduxItems.find(it => it._id === id)
-        if (item?.product.stockQuantity === 0) {
+
+        if (!item?.product) return
+        if (item.product.stockQuantity === 0) {
             setOosDialogOpen(true)
             return
         }
+
         setSelectedMap(prev => ({ ...prev, [id]: checked }))
     }
 
-    // ⭐ FIXED: Now includes size field
+    /** SAFE selectedItems */
     const selectedItems = useMemo(() => {
         if (checkout) return []
         return reduxItems
-            .filter(it => selectedMap[it._id])
+            .filter(it => selectedMap[it._id] && it.product)
             .map(it => ({
                 cartItemId: it._id,
                 product: it.product,
                 quantity: it.quantity,
-                size: it.size || null  // ⭐ CRITICAL FIX: Include size
+                size: it.size || null
             }))
     }, [checkout, reduxItems, selectedMap])
 
+    /** SAFE subtotal */
     const subtotalSelected = useMemo(() => {
-        return selectedItems.reduce(
-            (acc, item) => acc + item.product.price * item.quantity,
-            0
-        )
+        return selectedItems.reduce((acc, item) => {
+            if (!item.product) return acc
+            return acc + item.product.price * item.quantity
+        }, 0)
     }, [selectedItems])
 
     const hasOOSSelected = selectedItems.some(
-        (it) => it.product.stockQuantity === 0
+        (it) => it.product && it.product.stockQuantity === 0
     )
 
-    // Empty cart
     if (items.length === 0) {
         return (
             <Box sx={{
@@ -162,7 +167,7 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
             minHeight: '100vh',
             bgcolor: checkout ? 'transparent' : alpha(theme.palette.grey[50], 0.3)
         }}>
-            {/* Desktop: Top Bar with Back Button */}
+
             {!checkout && !isMobile && (
                 <Box
                     sx={{
@@ -206,7 +211,6 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                 px: { xs: 2, sm: 3, md: 4 },
                 py: checkout ? 0 : { xs: 2, sm: 3, md: 4 }
             }}>
-                {/* Mobile Header */}
                 {!checkout && isMobile && (
                     <Stack
                         direction="row"
@@ -241,25 +245,65 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                 )}
 
                 <Grid container spacing={{ xs: 2, md: 3 }}>
-                    {/* Cart Items - Left Side */}
                     <Grid item xs={12} md={checkout ? 12 : 8}>
                         <Stack gap={{ xs: 1.5, md: 2 }}>
-                            {items.map((item) => (
-                                <CartItem
-                                    key={item._id}
-                                    _id={item._id}
-                                    product={item.product}
-                                    quantity={item.quantity}
-                                    size={item.size}
-                                    selectable={!checkout}
-                                    checked={!checkout ? !!selectedMap[item._id] : false}
-                                    onSelectChange={(checked) => !checkout && onToggleSelect(item._id, checked)}
-                                    greyOut={item.product.stockQuantity === 0}
-                                />
-                            ))}
+
+                            {items.map((item) => {
+                                if (!item.product) {
+                                    return (
+                                        <Box
+                                            key={item._id}
+                                            sx={{
+                                                border: "1px solid",
+                                                borderColor: "error.main",
+                                                p: 2,
+                                                borderRadius: 2,
+                                                bgcolor: "#fff6f6",
+                                                mb: 2
+                                            }}
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                justifyContent="space-between"
+                                                alignItems="center"
+                                            >
+                                                <Typography fontWeight={600} color="error.main">
+                                                    This product is no longer available.
+                                                </Typography>
+
+                                                <Button
+                                                    color="error"
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => dispatch(deleteCartItemByIdAsync(item._id))}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </Stack>
+                                        </Box>
+                                    );
+                                }
+
+                                return (
+                                    <CartItem
+                                        key={item._id}
+                                        _id={item._id}
+                                        product={item.product}
+                                        quantity={item.quantity}
+                                        size={item.size}
+                                        selectable={!checkout}
+                                        checked={!checkout ? !!selectedMap[item._id] : false}
+                                        onSelectChange={(checked) =>
+                                            !checkout && onToggleSelect(item._id, checked)
+                                        }
+                                        greyOut={!item.product || item.product.stockQuantity === 0}
+                                    />
+                                );
+                            })}
+
                         </Stack>
                     </Grid>
-                    {/* Order Summary - Right Side (Sticky on Desktop) */}
+
                     {!checkout && (
                         <Grid item xs={12} md={4}>
                             <Box sx={{
@@ -276,7 +320,7 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                                 >
                                     <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
                                         <Stack gap={{ xs: 2, md: 2.5 }}>
-                                            {/* Header */}
+
                                             <Stack gap={0.5}>
                                                 <Typography
                                                     variant={isMobile ? "body1" : "h6"}
@@ -294,7 +338,6 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
 
                                             <Divider />
 
-                                            {/* Price Breakdown */}
                                             <Stack gap={1.5}>
                                                 <Stack
                                                     direction="row"
@@ -311,7 +354,6 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
 
                                                 <Divider />
 
-                                                {/* Total */}
                                                 <Stack
                                                     direction="row"
                                                     justifyContent="space-between"
@@ -330,7 +372,6 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                                                 </Stack>
                                             </Stack>
 
-                                            {/* Checkout Button */}
                                             <Button
                                                 fullWidth
                                                 variant='contained'
@@ -355,7 +396,6 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                                                 Proceed to Checkout ({selectedItems.length})
                                             </Button>
 
-                                            {/* Continue Shopping Link */}
                                             <Stack alignItems="center">
                                                 <Chip
                                                     component={Link}

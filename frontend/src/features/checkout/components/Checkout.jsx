@@ -81,10 +81,10 @@ export const Checkout = () => {
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [isOnlinePaying, setIsOnlinePaying] = useState(false)
 
-    // OTP state (Firebase) - CHANGED FROM MSG91
+    // OTP state (Firebase)
     const [otpDialogOpen, setOtpDialogOpen] = useState(false)
     const [otpTargetPhone, setOtpTargetPhone] = useState('')
-    const [firebasePhoneToken, setFirebasePhoneToken] = useState(null) // CHANGED: was otpVerifiedJWT
+    const [firebasePhoneToken, setFirebasePhoneToken] = useState(null)
     const [otpVerifiedPhone, setOtpVerifiedPhone] = useState(null)
 
     // Payment success animation state
@@ -127,12 +127,24 @@ export const Checkout = () => {
         [passedSelectedItems, cartItems, formattedBuyNowItem]
     )
 
-    // Totals
+    // Any invalid/missing products?
+    const hasInvalidItems = useMemo(
+        () =>
+            itemsToCheckout.some(
+                it =>
+                    !it.product ||
+                    !it.product._id ||
+                    typeof it.product.price !== 'number'
+            ),
+        [itemsToCheckout]
+    )
+
+    // Totals (skip invalid items)
     const orderSubtotal = useMemo(
-        () => itemsToCheckout.reduce(
-            (acc, item) => acc + (item.product?.price * item.quantity),
-            0
-        ),
+        () => itemsToCheckout.reduce((acc, item) => {
+            if (!item.product || typeof item.product.price !== 'number') return acc
+            return acc + (item.product.price * item.quantity)
+        }, 0),
         [itemsToCheckout]
     )
 
@@ -215,8 +227,11 @@ export const Checkout = () => {
                 toast.error('Your cart is empty.')
                 return
             }
+            if (hasInvalidItems) {
+                toast.error('Some items are no longer available. Please update your cart.')
+                return
+            }
 
-            // Hard block: must have verified Firebase phone token - CHANGED
             if (!firebasePhoneToken) {
                 toast.error('Please verify your mobile number before payment.')
                 return
@@ -248,7 +263,7 @@ export const Checkout = () => {
                 taxAmount: TAXES,
                 finalAmount: orderTotal,
                 paymentMode: 'RAZORPAY',
-                firebasePhoneToken: firebasePhoneToken // CHANGED: was phoneVerifiedToken
+                firebasePhoneToken: firebasePhoneToken
             }
 
             const { data } = await axiosi.post('/orders/razorpay/create', payload)
@@ -283,7 +298,6 @@ export const Checkout = () => {
                             orderId: data.orderId
                         });
 
-                        // Show success animation with button
                         setIsOnlinePaying(false);
                         setShowSuccessAnimation({
                             open: true,
@@ -324,6 +338,16 @@ export const Checkout = () => {
             return
         }
 
+        if (!itemsToCheckout?.length) {
+            toast.error('Your cart is empty.')
+            return
+        }
+
+        if (hasInvalidItems) {
+            toast.error('Some items are no longer available. Please update your cart.')
+            return
+        }
+
         const rawPhone = selectedAddress.phoneNumber
         const normalized = normalizePhone(rawPhone)
 
@@ -332,27 +356,24 @@ export const Checkout = () => {
             return
         }
 
-        // If already verified for this phone, directly proceed to payment
         if (firebasePhoneToken && otpVerifiedPhone === normalized) {
             handleRazorpayPayment()
             return
         }
 
-        // Not verified yet → open OTP dialog
         setOtpTargetPhone(normalized)
         setOtpDialogOpen(true)
     }
 
-    // Callback when OTPDialog verifies successfully (receives Firebase ID token) - CHANGED
+    // Callback when OTPDialog verifies successfully
     const handleOtpVerified = (idToken) => {
         const basePhone = selectedAddress?.phoneNumber || otpTargetPhone
         const normalized = normalizePhone(basePhone)
 
-        setFirebasePhoneToken(idToken) // CHANGED: was setOtpVerifiedJWT
+        setFirebasePhoneToken(idToken)
         setOtpVerifiedPhone(normalized)
         setOtpDialogOpen(false)
 
-        // Proceed to payment immediately after verification
         handleRazorpayPayment()
     }
 
@@ -454,9 +475,9 @@ export const Checkout = () => {
 
             <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
                 {isMobile ? (
-                    /* Mobile Layout - Original Vertical Design */
+                    /* Mobile Layout */
                     <Grid container spacing={2.5}>
-                        {/* LEFT: Address */}
+                        {/* Address */}
                         <Grid item xs={12}>
                             <Stack gap={2}>
                                 <motion.div
@@ -720,7 +741,7 @@ export const Checkout = () => {
                             </Stack>
                         </Grid>
 
-                        {/* RIGHT: Summary + Pay */}
+                        {/* Summary + Pay */}
                         <Grid item xs={12}>
                             <motion.div
                                 initial={{ opacity: 0, x: 12 }}
@@ -746,87 +767,100 @@ export const Checkout = () => {
                                                 gap={1.5}
                                                 sx={{ maxHeight: 260, overflowY: 'auto', pr: 0.5 }}
                                             >
-                                                {itemsToCheckout.map((item, idx) => (
-                                                    <Stack
-                                                        key={idx}
-                                                        direction="row"
-                                                        gap={1.5}
-                                                        sx={{
-                                                            p: 1,
-                                                            bgcolor: alpha(theme.palette.grey[100], 0.7),
-                                                            borderRadius: 1.5
-                                                        }}
-                                                    >
-                                                        <Box
+                                                {itemsToCheckout.map((item, idx) => {
+                                                    const product = item.product || null
+                                                    const isDeleted = !product || !product._id
+                                                    const lineTotal = !isDeleted && typeof product.price === 'number'
+                                                        ? product.price * item.quantity
+                                                        : 0
+
+                                                    return (
+                                                        <Stack
+                                                            key={idx}
+                                                            direction="row"
+                                                            gap={1.5}
                                                             sx={{
-                                                                width: 56,
-                                                                height: 56,
-                                                                flexShrink: 0,
-                                                                borderRadius: 1.5,
-                                                                overflow: 'hidden',
-                                                                bgcolor: 'white',
-                                                                border: '1px solid',
-                                                                borderColor: 'divider'
+                                                                p: 1,
+                                                                bgcolor: alpha(theme.palette.grey[100], 0.7),
+                                                                borderRadius: 1.5
                                                             }}
                                                         >
-                                                            <img
-                                                                src={item.product.thumbnail}
-                                                                alt={item.product.title}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    height: '100%',
-                                                                    objectFit: 'contain'
+                                                            <Box
+                                                                sx={{
+                                                                    width: 56,
+                                                                    height: 56,
+                                                                    flexShrink: 0,
+                                                                    borderRadius: 1.5,
+                                                                    overflow: 'hidden',
+                                                                    bgcolor: 'white',
+                                                                    border: '1px solid',
+                                                                    borderColor: 'divider'
                                                                 }}
-                                                            />
-                                                        </Box>
+                                                            >
+                                                                <img
+                                                                    src={product?.thumbnail || "/placeholder.png"}
+                                                                    alt={product?.title || "Product removed"}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'contain'
+                                                                    }}
+                                                                />
+                                                            </Box>
 
-                                                        <Stack flex={1} justifyContent="space-between">
-                                                            <Box>
+                                                            <Stack flex={1} justifyContent="space-between">
+                                                                <Box>
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        fontWeight={500}
+                                                                        sx={{
+                                                                            overflow: 'hidden',
+                                                                            textOverflow: 'ellipsis',
+                                                                            display: '-webkit-box',
+                                                                            WebkitLineClamp: 2,
+                                                                            WebkitBoxOrient: 'vertical'
+                                                                        }}
+                                                                    >
+                                                                        {product?.title || "Product no longer available"}
+                                                                    </Typography>
+                                                                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+                                                                        <Typography variant="caption" color="text.secondary">
+                                                                            Qty: {item.quantity}
+                                                                        </Typography>
+                                                                        {item.size && !isDeleted && (
+                                                                            <>
+                                                                                <Typography variant="caption" color="text.secondary">•</Typography>
+                                                                                <Chip
+                                                                                    label={`Size: ${item.size}`}
+                                                                                    size="small"
+                                                                                    sx={{
+                                                                                        height: 16,
+                                                                                        fontSize: '0.65rem',
+                                                                                        fontWeight: 600,
+                                                                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                                                        color: 'primary.main'
+                                                                                    }}
+                                                                                />
+                                                                            </>
+                                                                        )}
+                                                                    </Stack>
+                                                                    {isDeleted && (
+                                                                        <Typography variant="caption" color="error.main">
+                                                                            This item is no longer available
+                                                                        </Typography>
+                                                                    )}
+                                                                </Box>
                                                                 <Typography
                                                                     variant="body2"
-                                                                    fontWeight={500}
-                                                                    sx={{
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        display: '-webkit-box',
-                                                                        WebkitLineClamp: 2,
-                                                                        WebkitBoxOrient: 'vertical'
-                                                                    }}
+                                                                    fontWeight={600}
+                                                                    color="primary"
                                                                 >
-                                                                    {item.product.title}
+                                                                    ₹{lineTotal.toFixed(2)}
                                                                 </Typography>
-                                                                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                                                                    <Typography variant="caption" color="text.secondary">
-                                                                        Qty: {item.quantity}
-                                                                    </Typography>
-                                                                    {item.size && (
-                                                                        <>
-                                                                            <Typography variant="caption" color="text.secondary">•</Typography>
-                                                                            <Chip
-                                                                                label={`Size: ${item.size}`}
-                                                                                size="small"
-                                                                                sx={{
-                                                                                    height: 16,
-                                                                                    fontSize: '0.65rem',
-                                                                                    fontWeight: 600,
-                                                                                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                                                                    color: 'primary.main'
-                                                                                }}
-                                                                            />
-                                                                        </>
-                                                                    )}
-                                                                </Stack>
-                                                            </Box>
-                                                            <Typography
-                                                                variant="body2"
-                                                                fontWeight={600}
-                                                                color="primary"
-                                                            >
-                                                                ₹{(item.product.price * item.quantity).toFixed(2)}
-                                                            </Typography>
+                                                            </Stack>
                                                         </Stack>
-                                                    </Stack>
-                                                ))}
+                                                    )
+                                                })}
                                             </Stack>
 
                                             <Divider />
@@ -884,13 +918,12 @@ export const Checkout = () => {
                                                 </Typography>
                                             </Stack>
 
-                                            {/* Pay Securely Button */}
                                             <LoadingButton
                                                 fullWidth
                                                 variant="contained"
                                                 loading={isOnlinePaying}
                                                 onClick={handlePayClick}
-                                                disabled={!selectedAddress || !itemsToCheckout.length}
+                                                disabled={!selectedAddress || !itemsToCheckout.length || hasInvalidItems}
                                                 sx={{
                                                     mt: 0.5,
                                                     py: 1,
@@ -909,7 +942,6 @@ export const Checkout = () => {
                                                 {isOnlinePaying ? 'Processing payment...' : 'Pay Securely'}
                                             </LoadingButton>
 
-                                            {/* Security Badge */}
                                             <Stack
                                                 direction="row"
                                                 alignItems="center"
@@ -942,9 +974,9 @@ export const Checkout = () => {
                         </Grid>
                     </Grid>
                 ) : (
-                    /* Desktop Layout - Horizontal Design */
+                    /* Desktop Layout */
                     <Grid container spacing={3}>
-                        {/* LEFT SIDE: Address Selection & Form */}
+                        {/* LEFT: Address */}
                         <Grid item xs={12} md={7}>
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
@@ -952,7 +984,6 @@ export const Checkout = () => {
                                 transition={{ duration: 0.4 }}
                             >
                                 <Stack gap={3}>
-                                    {/* Address Card */}
                                     <Card
                                         elevation={0}
                                         sx={{
@@ -963,7 +994,6 @@ export const Checkout = () => {
                                     >
                                         <CardContent sx={{ p: 3 }}>
                                             <Stack gap={3}>
-                                                {/* Header */}
                                                 <Stack direction="row" alignItems="center" gap={2}>
                                                     <Box
                                                         sx={{
@@ -988,7 +1018,6 @@ export const Checkout = () => {
                                                     </Box>
                                                 </Stack>
 
-                                                {/* Saved Addresses */}
                                                 {addresses.length > 0 && (
                                                     <Stack gap={2}>
                                                         <Typography variant="body2" fontWeight={600} color="text.secondary">
@@ -1089,7 +1118,6 @@ export const Checkout = () => {
                                                     </Stack>
                                                 )}
 
-                                                {/* Add Address Button */}
                                                 {!showAddressForm && (
                                                     <Button
                                                         variant="text"
@@ -1108,7 +1136,6 @@ export const Checkout = () => {
                                                     </Button>
                                                 )}
 
-                                                {/* Add Address Form */}
                                                 {showAddressForm && (
                                                     <Box
                                                         component="form"
@@ -1231,19 +1258,14 @@ export const Checkout = () => {
                             </motion.div>
                         </Grid>
 
-                        {/* RIGHT SIDE: Order Summary (Sticky) */}
+                        {/* RIGHT: Summary */}
                         <Grid item xs={12} md={5}>
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, delay: 0.1 }}
                             >
-                                <Box
-                                    sx={{
-                                        position: 'sticky',
-                                        top: 24
-                                    }}
-                                >
+                                <Box sx={{ position: 'sticky', top: 24 }}>
                                     <Card
                                         elevation={0}
                                         sx={{
@@ -1253,7 +1275,6 @@ export const Checkout = () => {
                                             overflow: 'hidden'
                                         }}
                                     >
-                                        {/* Header */}
                                         <Box
                                             sx={{
                                                 p: 3,
@@ -1291,7 +1312,6 @@ export const Checkout = () => {
 
                                         <CardContent sx={{ p: 3 }}>
                                             <Stack gap={3}>
-                                                {/* Items List */}
                                                 <Stack
                                                     gap={2}
                                                     sx={{
@@ -1314,100 +1334,112 @@ export const Checkout = () => {
                                                         }
                                                     }}
                                                 >
-                                                    {itemsToCheckout.map((item, idx) => (
-                                                        <Stack
-                                                            key={idx}
-                                                            direction="row"
-                                                            gap={2}
-                                                            sx={{
-                                                                p: 1.5,
-                                                                bgcolor: alpha(theme.palette.grey[50], 0.5),
-                                                                borderRadius: 2,
-                                                                border: '1px solid',
-                                                                borderColor: 'divider'
-                                                            }}
-                                                        >
-                                                            <Box
+                                                    {itemsToCheckout.map((item, idx) => {
+                                                        const product = item.product || null
+                                                        const isDeleted = !product || !product._id
+                                                        const lineTotal = !isDeleted && typeof product.price === 'number'
+                                                            ? product.price * item.quantity
+                                                            : 0
+
+                                                        return (
+                                                            <Stack
+                                                                key={idx}
+                                                                direction="row"
+                                                                gap={2}
                                                                 sx={{
-                                                                    width: 70,
-                                                                    height: 70,
-                                                                    flexShrink: 0,
-                                                                    borderRadius: 1.5,
-                                                                    overflow: 'hidden',
-                                                                    bgcolor: 'white',
+                                                                    p: 1.5,
+                                                                    bgcolor: alpha(theme.palette.grey[50], 0.5),
+                                                                    borderRadius: 2,
                                                                     border: '1px solid',
-                                                                    borderColor: 'divider',
-                                                                    p: 1
+                                                                    borderColor: 'divider'
                                                                 }}
                                                             >
-                                                                <img
-                                                                    src={item.product.thumbnail}
-                                                                    alt={item.product.title}
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        height: '100%',
-                                                                        objectFit: 'contain'
+                                                                <Box
+                                                                    sx={{
+                                                                        width: 70,
+                                                                        height: 70,
+                                                                        flexShrink: 0,
+                                                                        borderRadius: 1.5,
+                                                                        overflow: 'hidden',
+                                                                        bgcolor: 'white',
+                                                                        border: '1px solid',
+                                                                        borderColor: 'divider',
+                                                                        p: 1
                                                                     }}
-                                                                />
-                                                            </Box>
-
-                                                            <Stack flex={1} justifyContent="space-between">
-                                                                <Box>
-                                                                    <Typography
-                                                                        variant="body1"
-                                                                        fontWeight={600}
-                                                                        sx={{
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            display: '-webkit-box',
-                                                                            WebkitLineClamp: 2,
-                                                                            WebkitBoxOrient: 'vertical',
-                                                                            lineHeight: 1.4
-                                                                        }}
-                                                                    >
-                                                                        {item.product.title}
-                                                                    </Typography>
-                                                                    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.5 }}>
-                                                                        <Typography
-                                                                            variant="body2"
-                                                                            color="text.secondary"
-                                                                        >
-                                                                            Quantity: {item.quantity}
-                                                                        </Typography>
-                                                                        {item.size && (
-                                                                            <>
-                                                                                <Typography variant="body2" color="text.secondary">•</Typography>
-                                                                                <Chip
-                                                                                    label={`Size: ${item.size}`}
-                                                                                    size="small"
-                                                                                    sx={{
-                                                                                        height: 20,
-                                                                                        fontSize: '0.7rem',
-                                                                                        fontWeight: 600,
-                                                                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                                                                        color: 'primary.main'
-                                                                                    }}
-                                                                                />
-                                                                            </>
-                                                                        )}
-                                                                    </Stack>
-                                                                </Box>
-                                                                <Typography
-                                                                    variant="h6"
-                                                                    fontWeight={700}
-                                                                    color="primary.main"
-                                                                    sx={{ fontSize: '1.1rem' }}
                                                                 >
-                                                                    ₹{(item.product.price * item.quantity).toFixed(2)}
-                                                                </Typography>
+                                                                    <img
+                                                                        src={product?.thumbnail || "/placeholder.png"}
+                                                                        alt={product?.title || "Product removed"}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            height: '100%',
+                                                                            objectFit: 'contain'
+                                                                        }}
+                                                                    />
+                                                                </Box>
+
+                                                                <Stack flex={1} justifyContent="space-between">
+                                                                    <Box>
+                                                                        <Typography
+                                                                            variant="body1"
+                                                                            fontWeight={600}
+                                                                            sx={{
+                                                                                overflow: 'hidden',
+                                                                                textOverflow: 'ellipsis',
+                                                                                display: '-webkit-box',
+                                                                                WebkitLineClamp: 2,
+                                                                                WebkitBoxOrient: 'vertical',
+                                                                                lineHeight: 1.4
+                                                                            }}
+                                                                        >
+                                                                            {product?.title || "Product no longer available"}
+                                                                        </Typography>
+                                                                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.5 }}>
+                                                                            <Typography
+                                                                                variant="body2"
+                                                                                color="text.secondary"
+                                                                            >
+                                                                                Quantity: {item.quantity}
+                                                                            </Typography>
+                                                                            {item.size && !isDeleted && (
+                                                                                <>
+                                                                                    <Typography variant="body2" color="text.secondary">•</Typography>
+                                                                                    <Chip
+                                                                                        label={`Size: ${item.size}`}
+                                                                                        size="small"
+                                                                                        sx={{
+                                                                                            height: 20,
+                                                                                            fontSize: '0.7rem',
+                                                                                            fontWeight: 600,
+                                                                                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                                                            color: 'primary.main'
+                                                                                        }}
+                                                                                    />
+                                                                                </>
+                                                                            )}
+                                                                        </Stack>
+                                                                        {isDeleted && (
+                                                                            <Typography variant="caption" color="error.main">
+                                                                                This item is no longer available
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Box>
+                                                                    <Typography
+                                                                        variant="h6"
+                                                                        fontWeight={700}
+                                                                        color="primary.main"
+                                                                        sx={{ fontSize: '1.1rem' }}
+                                                                    >
+                                                                        ₹{lineTotal.toFixed(2)}
+                                                                    </Typography>
+                                                                </Stack>
                                                             </Stack>
-                                                        </Stack>
-                                                    ))}
+                                                        )
+                                                    })}
                                                 </Stack>
 
                                                 <Divider />
 
-                                                {/* Price Breakdown */}
                                                 <Stack gap={1.5}>
                                                     <Stack direction="row" justifyContent="space-between" alignItems="center">
                                                         <Typography variant="body1" color="text.secondary">
@@ -1437,7 +1469,6 @@ export const Checkout = () => {
 
                                                 <Divider sx={{ borderStyle: 'dashed' }} />
 
-                                                {/* Total */}
                                                 <Stack
                                                     direction="row"
                                                     justifyContent="space-between"
@@ -1460,14 +1491,13 @@ export const Checkout = () => {
                                                     </Typography>
                                                 </Stack>
 
-                                                {/* Payment Button */}
                                                 <LoadingButton
                                                     fullWidth
                                                     size="large"
                                                     variant="contained"
                                                     loading={isOnlinePaying}
                                                     onClick={handlePayClick}
-                                                    disabled={!selectedAddress || !itemsToCheckout.length}
+                                                    disabled={!selectedAddress || !itemsToCheckout.length || hasInvalidItems}
                                                     startIcon={<LockIcon />}
                                                     sx={{
                                                         py: 1.75,
@@ -1486,7 +1516,6 @@ export const Checkout = () => {
                                                     {isOnlinePaying ? 'Processing Payment...' : 'Proceed to Secure Payment'}
                                                 </LoadingButton>
 
-                                                {/* Security Badge */}
                                                 <Stack
                                                     direction="row"
                                                     alignItems="center"
@@ -1534,7 +1563,6 @@ export const Checkout = () => {
                 }}
             />
 
-            {/* OTP Verification Dialog (Firebase Phone Auth) */}
             <OTPDialog
                 open={otpDialogOpen}
                 phone={otpTargetPhone}

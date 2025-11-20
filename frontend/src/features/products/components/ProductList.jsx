@@ -10,10 +10,10 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
-import SortIcon from "@mui/icons-material/Sort";
 import SearchIcon from "@mui/icons-material/Search";
 
 import { useDispatch, useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import {
     fetchProductsAsync,
     selectProducts,
@@ -41,11 +41,13 @@ import { ProductBanner } from "./ProductBanner";
 import Lottie from "lottie-react";
 import { loadingAnimation, banner1, banner2, banner3, banner4 } from "../../../assets";
 import NotFoundSearch from "../../../assets/animations/NotFoundSearch.json";
+
 import { ITEMS_PER_PAGE } from "../../../constants";
+import SortIcon from "@mui/icons-material/Sort";
 
 const sortOptions = [
-    { name: "Price: low to high", sort: "price", order: "asc" },
-    { name: "Price: high to low", sort: "price", order: "desc" },
+    { name: "Price: low to high", sort: "price", order: "asc", value: "price-asc" },
+    { name: "Price: high to low", sort: "price", order: "desc", value: "price-desc" },
 ];
 
 const bannerImages = [banner1, banner2, banner3, banner4];
@@ -62,8 +64,8 @@ const ProductCardSkeleton = () => (
 export const ProductList = () => {
     const dispatch = useDispatch();
     const theme = useTheme();
-
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const products = useSelector(selectProducts);
     const totalResults = useSelector(selectProductTotalResults);
@@ -78,35 +80,74 @@ export const ProductList = () => {
     const cartAddStatus = useSelector(selectCartItemAddStatus);
     const loggedInUser = useSelector(selectLoggedInUser);
 
-    const [filters, setFilters] = useState({});
-    const [sort, setSort] = useState(null);
-    const [page, setPage] = useState(1);
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
 
-    /* Debounce search input */
+    // Mobile-only search state
+    const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+    const [debouncedMobileSearch, setDebouncedMobileSearch] = useState("");
+
+    // Read from URL params
+    const urlSearch = searchParams.get('search') || '';
+    const urlSort = searchParams.get('sort') || '';
+    const urlPage = parseInt(searchParams.get('page') || '1');
+    const urlBrands = searchParams.get('brands')?.split(',').filter(Boolean) || [];
+    const urlCategories = searchParams.get('categories')?.split(',').filter(Boolean) || [];
+
+    // Local state for filters
+    const [selectedBrands, setSelectedBrands] = useState(urlBrands);
+    const [selectedCategories, setSelectedCategories] = useState(urlCategories);
+
+    /* Debounce mobile search input */
     useEffect(() => {
+        if (!isMobile) return;
+
         const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-            setPage(1);
+            setDebouncedMobileSearch(mobileSearchQuery);
+            const params = new URLSearchParams(searchParams);
+            if (mobileSearchQuery.trim()) {
+                params.set('search', mobileSearchQuery.trim());
+            } else {
+                params.delete('search');
+            }
+            params.delete('page');
+            setSearchParams(params);
         }, 400);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
 
-    /* Fetch products */
+        return () => clearTimeout(timer);
+    }, [mobileSearchQuery, isMobile]);
+
+    // Sync filters with URL
     useEffect(() => {
+        setSelectedBrands(urlBrands);
+        setSelectedCategories(urlCategories);
+    }, [searchParams.get('brands'), searchParams.get('categories')]);
+
+    /* Fetch products based on URL params */
+    useEffect(() => {
+        const filters = {};
+        if (urlBrands.length > 0) filters.brand = urlBrands;
+        if (urlCategories.length > 0) filters.category = urlCategories;
+
+        let sort = null;
+        if (urlSort === 'price-asc') {
+            sort = { sort: 'price', order: 'asc' };
+        } else if (urlSort === 'price-desc') {
+            sort = { sort: 'price', order: 'desc' };
+        }
+
         const payload = {
             ...filters,
-            pagination: { page, limit: ITEMS_PER_PAGE },
+            pagination: { page: urlPage, limit: ITEMS_PER_PAGE },
             sort
         };
-        if (debouncedSearch.trim()) {
-            payload.search = debouncedSearch.trim();
-        }
+
+        const searchTerm = isMobile ? debouncedMobileSearch : urlSearch;
+        if (searchTerm.trim()) payload.search = searchTerm.trim();
+
         if (!loggedInUser?.isAdmin) payload.user = true;
+
         dispatch(fetchProductsAsync(payload));
-    }, [filters, sort, page, debouncedSearch]);
+    }, [urlSearch, urlSort, urlPage, urlBrands.join(','), urlCategories.join(','), debouncedMobileSearch, isMobile]);
 
     /* Toast logic */
     useEffect(() => {
@@ -128,18 +169,46 @@ export const ProductList = () => {
         return () => dispatch(resetProductFetchStatus());
     }, []);
 
+    // CRITICAL FIX: FILTER OUT soft-deleted products
+    const visibleProducts = products.filter((p) => !p.isDeleted);
+
     const handleBrand = (e) => {
-        const setB = new Set(filters.brand || []);
-        e.target.checked ? setB.add(e.target.value) : setB.delete(e.target.value);
-        setFilters({ ...filters, brand: [...setB] });
-        setPage(1);
+        const brandId = e.target.value;
+        const newBrands = e.target.checked
+            ? [...selectedBrands, brandId]
+            : selectedBrands.filter(b => b !== brandId);
+
+        setSelectedBrands(newBrands);
+        updateFiltersInURL(newBrands, selectedCategories);
     };
 
     const handleCategory = (e) => {
-        const setC = new Set(filters.category || []);
-        e.target.checked ? setC.add(e.target.value) : setC.delete(e.target.value);
-        setFilters({ ...filters, category: [...setC] });
-        setPage(1);
+        const catId = e.target.value;
+        const newCategories = e.target.checked
+            ? [...selectedCategories, catId]
+            : selectedCategories.filter(c => c !== catId);
+
+        setSelectedCategories(newCategories);
+        updateFiltersInURL(selectedBrands, newCategories);
+    };
+
+    const updateFiltersInURL = (brands, categories) => {
+        const params = new URLSearchParams(searchParams);
+
+        if (brands.length > 0) {
+            params.set('brands', brands.join(','));
+        } else {
+            params.delete('brands');
+        }
+
+        if (categories.length > 0) {
+            params.set('categories', categories.join(','));
+        } else {
+            params.delete('categories');
+        }
+
+        params.delete('page');
+        setSearchParams(params);
     };
 
     const handleWishlistToggle = (e, productId) => {
@@ -151,22 +220,50 @@ export const ProductList = () => {
         }
     };
 
-    const handleClearSearch = () => {
-        setSearchQuery("");
-        setDebouncedSearch("");
+    const handleClearMobileSearch = () => {
+        setMobileSearchQuery("");
+        setDebouncedMobileSearch("");
+        const params = new URLSearchParams(searchParams);
+        params.delete('search');
+        params.delete('page');
+        setSearchParams(params);
+    };
+
+    const handleSortChange = (e) => {
+        const params = new URLSearchParams(searchParams);
+        const sortValue = e.target.value;
+
+        if (sortValue) {
+            params.set('sort', sortValue);
+        } else {
+            params.delete('sort');
+        }
+        params.delete('page');
+        setSearchParams(params);
+    };
+
+    const handlePageChange = (e, value) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', value.toString());
+        setSearchParams(params);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleClearAllFilters = () => {
+        setMobileSearchQuery("");
+        setDebouncedMobileSearch("");
+        setSelectedBrands([]);
+        setSelectedCategories([]);
+        setSearchParams({});
     };
 
     const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
-    const activeFilterCount =
-        (filters.brand?.length || 0) + (filters.category?.length || 0);
-
-    const showNoResults = fetchStatus === "fulfilled" && products.length === 0;
+    const activeFilterCount = selectedBrands.length + selectedCategories.length;
+    const showNoResults = fetchStatus === "fulfilled" && visibleProducts.length === 0;
 
     return (
         <Box>
-            {/* ============================================================ */}
-            {/* 1) PRODUCT BANNER */}
-            {/* ============================================================ */}
+            {/* BANNER */}
             <Box sx={{
                 width: "100%",
                 height: { xs: 180, sm: 260, md: 360, lg: 400 },
@@ -177,35 +274,81 @@ export const ProductList = () => {
                 <ProductBanner images={bannerImages} />
             </Box>
 
-            {/* ============================================================ */}
-            {/* 2) SEARCH, SORT, FILTER CONTROLS */}
-            {/* ============================================================ */}
-            <Box
-                sx={{
-                    mt: 3,
-                    px: { xs: 2, sm: 3, md: 4 },
-                    maxWidth: "1400px",
-                    mx: "auto"
-                }}
-            >
-                {/* MOBILE LAYOUT */}
-                {isMobile ? (
+            {/* SEARCH + SORT + FILTER - DESKTOP */}
+            {!isMobile && !loggedInUser?.isAdmin && (
+                <Box
+                    sx={{
+                        mt: 3,
+                        px: { xs: 2, sm: 3, md: 4 },
+                        maxWidth: "1400px",
+                        mx: "auto"
+                    }}
+                >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        <FormControl size="small" sx={{ minWidth: 150 }}>
+                            <InputLabel>
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <SortIcon fontSize="small" />
+                                    <span>Sort</span>
+                                </Stack>
+                            </InputLabel>
+                            <Select
+                                label="Sort"
+                                value={urlSort}
+                                onChange={handleSortChange}
+                            >
+                                <MenuItem value="">
+                                    <em>Default</em>
+                                </MenuItem>
+                                {sortOptions.map((s) => (
+                                    <MenuItem key={s.value} value={s.value}>
+                                        {s.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <Box sx={{ position: "relative" }}>
+                            <Button
+                                variant={activeFilterCount > 0 ? "contained" : "outlined"}
+                                size="small"
+                                startIcon={<FilterListIcon />}
+                                onClick={() => setDrawerOpen(true)}
+                            >
+                                Filter
+                            </Button>
+
+                            {activeFilterCount > 0 && (
+                                <Chip
+                                    label={activeFilterCount}
+                                    color="primary"
+                                    size="small"
+                                    sx={{ position: "absolute", top: -8, right: -8 }}
+                                />
+                            )}
+                        </Box>
+                    </Stack>
+                </Box>
+            )}
+
+            {/* MOBILE SEARCH + SORT + FILTER */}
+            {isMobile && (
+                <Box sx={{ mt: 3, px: { xs: 2, sm: 3 } }}>
                     <Stack spacing={2}>
-                        {/* First Line: Search Bar */}
                         <TextField
                             fullWidth
                             placeholder="Search products, brands, categories..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={mobileSearchQuery}
+                            onChange={(e) => setMobileSearchQuery(e.target.value)}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <SearchIcon />
                                     </InputAdornment>
                                 ),
-                                endAdornment: searchQuery && (
+                                endAdornment: mobileSearchQuery && (
                                     <InputAdornment position="end">
-                                        <IconButton size="small" onClick={handleClearSearch}>
+                                        <IconButton size="small" onClick={handleClearMobileSearch}>
                                             <ClearIcon />
                                         </IconButton>
                                     </InputAdornment>
@@ -219,27 +362,25 @@ export const ProductList = () => {
                             }}
                         />
 
-                        {/* Second Line: Sort and Filter */}
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                            {/* Sort Button (Left) */}
+                        <Stack direction="row" justifyContent="space-between">
                             <FormControl size="small" sx={{ minWidth: 140 }}>
                                 <InputLabel>Sort</InputLabel>
                                 <Select
                                     label="Sort"
-                                    value={sort || ""}
-                                    onChange={(e) => setSort(e.target.value || null)}
-                                    startAdornment={<SortIcon sx={{ mr: 1 }} />}
+                                    value={urlSort}
+                                    onChange={handleSortChange}
                                 >
                                     <MenuItem value="">
                                         <em>Default</em>
                                     </MenuItem>
-                                    {sortOptions.map((s, i) => (
-                                        <MenuItem key={i} value={s}>{s.name}</MenuItem>
+                                    {sortOptions.map((s) => (
+                                        <MenuItem key={s.value} value={s.value}>
+                                            {s.name}
+                                        </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
 
-                            {/* Filter Button (Right) */}
                             <Box sx={{ position: "relative" }}>
                                 <Button
                                     variant={activeFilterCount > 0 ? "contained" : "outlined"}
@@ -261,91 +402,10 @@ export const ProductList = () => {
                             </Box>
                         </Stack>
                     </Stack>
-                ) : (
-                    /* DESKTOP LAYOUT */
-                    <Stack
-                        direction="row"
-                        spacing={2}
-                        alignItems="center"
-                        justifyContent="space-between"
-                    >
-                        {/* Sort Button (Left) */}
-                        <FormControl size="small" sx={{ minWidth: 150 }}>
-                            <InputLabel>Sort</InputLabel>
-                            <Select
-                                label="Sort"
-                                value={sort || ""}
-                                onChange={(e) => setSort(e.target.value || null)}
-                                startAdornment={<SortIcon sx={{ mr: 1 }} />}
-                            >
-                                <MenuItem value="">
-                                    <em>Default</em>
-                                </MenuItem>
-                                {sortOptions.map((s, i) => (
-                                    <MenuItem key={i} value={s}>{s.name}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                </Box>
+            )}
 
-                        {/* Search Bar (Center - Grows) */}
-                        <Box sx={{ flexGrow: 1 }}>
-                            <TextField
-                                fullWidth
-                                placeholder="Search products, brands, categories, descriptions..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon />
-                                        </InputAdornment>
-                                    ),
-                                    endAdornment: searchQuery && (
-                                        <InputAdornment position="end">
-                                            <IconButton size="small" onClick={handleClearSearch}>
-                                                <ClearIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                                sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                        borderRadius: 3,
-                                        bgcolor: "background.paper"
-                                    },
-                                    minWidth: "380px"
-                                }}
-                            />
-                        </Box>
-
-                        {/* Filter Button (Right) */}
-                        <Box sx={{ position: "relative" }}>
-                            <Button
-                                variant={activeFilterCount > 0 ? "contained" : "outlined"}
-                                size="small"
-                                startIcon={<FilterListIcon />}
-                                onClick={() => setDrawerOpen(true)}
-                                sx={{ whiteSpace: "nowrap" }}
-                            >
-                                Filter
-                            </Button>
-
-                            {activeFilterCount > 0 && (
-                                <Chip
-                                    label={activeFilterCount}
-                                    color="primary"
-                                    size="small"
-                                    sx={{ position: "absolute", top: -8, right: -8 }}
-                                />
-                            )}
-                        </Box>
-                    </Stack>
-                )}
-            </Box>
-
-            {/* ============================================================ */}
-            {/* 3) PRODUCT LIST / NO RESULTS / LOADING */}
-            {/* ============================================================ */}
+            {/* PRODUCT LIST */}
             <Box
                 sx={{
                     px: { xs: 1, sm: 2, md: 4, lg: 5 },
@@ -356,39 +416,28 @@ export const ProductList = () => {
                 }}
             >
                 {fetchStatus === "pending" ? (
-                    <Grid container spacing={{ xs: 1.2, sm: 1.5, md: 2.2 }}>
+                    <Grid container spacing={2}>
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <Grid key={i} item xs={6} sm={4} md={4} lg={3}>
+                            <Grid key={i} item xs={6} sm={4} md={3}>
                                 <ProductCardSkeleton />
                             </Grid>
                         ))}
                     </Grid>
                 ) : showNoResults ? (
-                    <Stack alignItems="center" justifyContent="center" sx={{ minHeight: "45vh", py: 4 }}>
-                        <Box sx={{ width: isMobile ? 220 : 320 }}>
+                    <Stack alignItems="center" justifyContent="center" sx={{ height: "40vh" }}>
+                        <Box sx={{ width: 260 }}>
                             <Lottie animationData={NotFoundSearch} loop />
                         </Box>
 
-                        <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} sx={{ mt: 1 }}>
+                        <Typography variant="h6" fontWeight={700}>
                             No products found
                         </Typography>
 
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            {searchQuery
-                                ? `No results found. Try with different keywords.`
-                                : "Try adjusting your filters or search terms."}
-                        </Typography>
-
-                        {(searchQuery || activeFilterCount > 0) && (
+                        {(urlSearch || activeFilterCount > 0) && (
                             <Button
                                 variant="outlined"
                                 sx={{ mt: 3 }}
-                                onClick={() => {
-                                    setSearchQuery("");
-                                    setDebouncedSearch("");
-                                    setFilters({});
-                                    setSort(null);
-                                }}
+                                onClick={handleClearAllFilters}
                             >
                                 Clear All Filters
                             </Button>
@@ -397,13 +446,13 @@ export const ProductList = () => {
                 ) : (
                     <>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            {searchQuery && `Search results for "${searchQuery}" - `}
-                            Showing {products.length} of {totalResults} products
+                            {urlSearch && `Search results for "${urlSearch}" - `}
+                            Showing {visibleProducts.length} of {totalResults} products
                         </Typography>
 
                         <Grid container spacing={2}>
-                            {products.map((p) => (
-                                <Grid key={p._id} item xs={6} sm={6} md={4} lg={3} sx={{ display: "flex" }}>
+                            {visibleProducts.map((p) => (
+                                <Grid key={p._id} item xs={6} sm={6} md={4} lg={3}>
                                     <ProductCard
                                         id={p._id}
                                         title={p.title}
@@ -421,8 +470,8 @@ export const ProductList = () => {
                             <Stack alignItems="center" mt={4}>
                                 <Pagination
                                     count={totalPages}
-                                    page={page}
-                                    onChange={(e, v) => setPage(v)}
+                                    page={urlPage}
+                                    onChange={handlePageChange}
                                     color="primary"
                                 />
                             </Stack>
@@ -431,9 +480,7 @@ export const ProductList = () => {
                 )}
             </Box>
 
-            {/* ============================================================ */}
-            {/* 4) FILTER DRAWER (MOBILE & DESKTOP) */}
-            {/* ============================================================ */}
+            {/* FILTER DRAWER */}
             <Drawer
                 anchor="bottom"
                 open={drawerOpen}
@@ -448,7 +495,7 @@ export const ProductList = () => {
                 }}
             >
                 <Box sx={{ p: 2, height: "100%", overflowY: "auto" }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Stack direction="row" justifyContent="space-between">
                         <Typography variant="h6">Filters</Typography>
                         <IconButton onClick={() => setDrawerOpen(false)}>
                             <ClearIcon />
@@ -470,7 +517,7 @@ export const ProductList = () => {
                                         control={
                                             <Checkbox
                                                 value={b._id}
-                                                checked={filters.brand?.includes(b._id) || false}
+                                                checked={selectedBrands.includes(b._id)}
                                                 onChange={handleBrand}
                                             />
                                         }
@@ -488,6 +535,7 @@ export const ProductList = () => {
                         <AccordionSummary expandIcon={<AddIcon />}>
                             <Typography>Categories</Typography>
                         </AccordionSummary>
+
                         <AccordionDetails>
                             <FormGroup>
                                 {categories.map((c) => (
@@ -496,7 +544,7 @@ export const ProductList = () => {
                                         control={
                                             <Checkbox
                                                 value={c._id}
-                                                checked={filters.category?.includes(c._id) || false}
+                                                checked={selectedCategories.includes(c._id)}
                                                 onChange={handleCategory}
                                             />
                                         }

@@ -49,6 +49,8 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
 import { ITEMS_PER_PAGE } from '../../../constants'
 import SearchIcon from '@mui/icons-material/Search'
 import SortIcon from '@mui/icons-material/Sort'
+import { selectProductStats, fetchProductStatsAsync } from "../../products/ProductSlice";
+
 
 const sortOptions = [
     { label: 'Newest first', sort: 'createdAt', order: 'desc' },
@@ -124,6 +126,16 @@ export const AdminDashBoard = () => {
         }, 400)
         return () => clearTimeout(timer)
     }, [searchQuery])
+
+    useEffect(() => {
+        dispatch(fetchProductStatsAsync());
+    }, []);
+
+    // Auto refresh stats whenever product list updates
+    useEffect(() => {
+        dispatch(fetchProductStatsAsync());
+    }, [products]);
+
 
     // Reset page when total changes
     useEffect(() => {
@@ -206,31 +218,31 @@ export const AdminDashBoard = () => {
         setPage(1)
     }
 
-    const deletedCount = products.filter(p => p.isDeleted).length
-
+    const statsGlobal = useSelector(selectProductStats);
     const stats = [
         {
-            label: 'Total Products',
-            value: grandTotal,
+            label: "Total Products",
+            value: statsGlobal.total,
             icon: ShoppingBagIcon,
-            color: '#2563eb',
+            color: "#2563eb",
             filterKey: null
         },
         {
-            label: 'Active Products',
-            value: activeFilter === 'active' ? filteredTotal : grandTotal - deletedCount,
+            label: "Active Products",
+            value: statsGlobal.active,
             icon: TrendingUpIcon,
-            color: '#16a34a',
-            filterKey: 'active'
+            color: "#16a34a",
+            filterKey: "active"
         },
         {
-            label: 'Deleted Products',
-            value: activeFilter === 'deleted' ? filteredTotal : deletedCount,
+            label: "Deleted Products",
+            value: statsGlobal.deleted,
             icon: DeleteOutlineIcon,
-            color: '#dc2626',
-            filterKey: 'deleted'
+            color: "#dc2626",
+            filterKey: "deleted"
         }
-    ]
+    ];
+
 
     const isLoading = productFetchStatus === 'pending'
 

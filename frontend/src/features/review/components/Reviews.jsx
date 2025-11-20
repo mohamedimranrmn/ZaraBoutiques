@@ -137,7 +137,20 @@ export const Reviews = ({productId,averageRating}) => {
 
             {/* reviews mapping */}
             <Stack rowGap={2} >
-                {reviews?.map((review)=>(<ReviewItem key={review._id} id={review._id} userid={review.user._id} comment={review.comment} createdAt={review.createdAt} rating={review.rating} username={review.user.name} />))}
+                {reviews?.map((review) => {
+                    const safeUser = review?.user || {};
+                    return (
+                        <ReviewItem
+                            key={review._id}
+                            id={review._id}
+                            userid={safeUser._id || null}
+                            comment={review.comment}
+                            createdAt={review.createdAt}
+                            rating={review.rating}
+                            username={safeUser.name || "Unknown User"}
+                        />
+                    );
+                })}
             </Stack>
 
             

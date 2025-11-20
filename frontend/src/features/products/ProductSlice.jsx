@@ -8,6 +8,7 @@ import {
     updateProductById,
     forceDeleteProductById
 } from "./ProductApi";
+import {axiosi} from "../../config/axios";
 
 const initialState = {
     status: "idle",
@@ -19,12 +20,24 @@ const initialState = {
     isFilterOpen: false,
     selectedProduct: null,
     errors: null,
-    successMessage: null
+    successMessage: null,
+    stats: { total: 0, active: 0, deleted: 0 },
+    statsStatus: "idle",
 };
+
 
 /* ============================================
    THUNKS
 ============================================ */
+
+export const fetchProductStatsAsync = createAsyncThunk(
+    "products/fetchStats",
+    async () => {
+        const res = await axiosi.get("/products/stats");
+        return res.data;
+    }
+);
+
 export const addProductAsync = createAsyncThunk(
     "products/addProductAsync",
     async (data) => await addProduct(data)
@@ -168,6 +181,17 @@ const productSlice = createSlice({
                 if (index !== -1) state.products[index] = action.payload;
             })
 
+            .addCase(fetchProductStatsAsync.pending, (state) => {
+                state.statsStatus = "pending";
+            })
+            .addCase(fetchProductStatsAsync.fulfilled, (state, action) => {
+                state.statsStatus = "fulfilled";
+                state.stats = action.payload;
+            })
+            .addCase(fetchProductStatsAsync.rejected, (state) => {
+                state.statsStatus = "rejected";
+            })
+
             /* --------------------- FORCE DELETE PRODUCT --------------------- */
             .addCase(forceDeleteProductByIdAsync.fulfilled, (state, action) => {
                 state.status = "fulfilled";
@@ -182,6 +206,7 @@ const productSlice = createSlice({
 /* ============================================
    SELECTORS
 ============================================ */
+export const selectProductStats = (state) => state.ProductSlice.stats;
 export const selectProductStatus = (state) => state.ProductSlice.status;
 export const selectProducts = (state) => state.ProductSlice.products;
 export const selectProductTotalResults = (state) => state.ProductSlice.totalResults;

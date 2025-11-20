@@ -7,8 +7,8 @@ import Menu from '@mui/material/Menu';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import { Link, useNavigate } from 'react-router-dom';
-import { Badge, Chip, Stack, useMediaQuery, useTheme, Box, Divider } from '@mui/material';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Badge, Stack, useMediaQuery, useTheme, Box, Divider, TextField, InputAdornment, Button, Chip } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUserInfo } from '../../user/UserSlice';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
@@ -16,10 +16,15 @@ import { selectCartItems } from '../../cart/CartSlice';
 import { selectLoggedInUser } from '../../auth/AuthSlice';
 import { selectWishlistItems } from '../../wishlist/WishlistSlice';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SortIcon from '@mui/icons-material/Sort';
 
-export const Navbar = () => {
-
+export const Navbar = ({ onFilterClick, activeFilterCount = 0 }) => {
     const [anchorElUser, setAnchorElUser] = React.useState(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [localSearch, setLocalSearch] = React.useState(searchParams.get('search') || '');
 
     const userInfo = useSelector(selectUserInfo);
     const cartItems = useSelector(selectCartItems);
@@ -29,17 +34,70 @@ export const Navbar = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const is600 = useMediaQuery(theme.breakpoints.down(600));
-    const is480 = useMediaQuery(theme.breakpoints.down(480));
+
+    // Debounce search
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            const params = new URLSearchParams(searchParams);
+            if (localSearch.trim()) {
+                params.set('search', localSearch.trim());
+            } else {
+                params.delete('search');
+            }
+            params.delete('page'); // Reset to page 1 on search
+            setSearchParams(params);
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [localSearch]);
+
+    // Sync with URL params
+    React.useEffect(() => {
+        const urlSearch = searchParams.get('search') || '';
+        if (urlSearch !== localSearch) {
+            setLocalSearch(urlSearch);
+        }
+    }, [searchParams.get('search')]);
 
     const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
     const handleCloseUserMenu = () => setAnchorElUser(null);
 
-    const settings = [
-        { name: "Home", to: "/" },
-        { name: 'Profile', to: loggedInUser?.isAdmin ? "/admin/profile" : "/profile" },
-        { name: loggedInUser?.isAdmin ? 'Orders' : 'My Orders', to: loggedInUser?.isAdmin ? "/admin/orders" : "/orders" },
-        { name: 'Logout', to: "/logout" },
-    ];
+    const handleClearSearch = () => {
+        setLocalSearch('');
+        const params = new URLSearchParams(searchParams);
+        params.delete('search');
+        params.delete('page');
+        setSearchParams(params);
+    };
+
+    const handleSort = (sortType) => {
+        const params = new URLSearchParams(searchParams);
+        const currentSort = searchParams.get('sort');
+
+        if (currentSort === sortType) {
+            params.delete('sort');
+        } else {
+            params.set('sort', sortType);
+        }
+        params.delete('page');
+        setSearchParams(params);
+    };
+
+    const currentSort = searchParams.get('sort') || '';
+
+    // Filter settings based on user role
+    const settings = loggedInUser?.isAdmin
+        ? [
+            { name: "Home", to: "/" },
+            { name: 'Orders', to: "/admin/orders" },
+            { name: 'Logout', to: "/logout" },
+        ]
+        : [
+            { name: "Home", to: "/" },
+            { name: 'Profile', to: "/profile" },
+            { name: 'My Orders', to: "/orders" },
+            { name: 'Logout', to: "/logout" },
+        ];
 
     return (
         <AppBar
@@ -54,13 +112,12 @@ export const Navbar = () => {
             <Toolbar
                 sx={{
                     px: is600 ? 2 : 4,
-                    height: is600 ? 60 : 70,
+                    minHeight: is600 ? 60 : 70,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center"
                 }}
             >
-
                 {/* ------------------ LOGO ------------------ */}
                 <Typography
                     variant="h6"
@@ -74,14 +131,57 @@ export const Navbar = () => {
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
                         fontSize: is600 ? "1rem" : "1.5rem",
+                        flexShrink: 0
                     }}
                 >
                     ZARA BOUTIQUES
                 </Typography>
 
+                {/* ------------------ DESKTOP SEARCH ------------------ */}
+                {!is600 && !loggedInUser?.isAdmin && (
+                    <Box sx={{ flexGrow: 1, mx: 4, maxWidth: 600 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Search products, brands, categories..."
+                            value={localSearch}
+                            onChange={(e) => setLocalSearch(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon sx={{ color: 'text.secondary' }} />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: localSearch && (
+                                    <InputAdornment position="end">
+                                        <IconButton size="small" onClick={handleClearSearch}>
+                                            <ClearIcon fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 3,
+                                    bgcolor: '#f5f5f5',
+                                    '& fieldset': {
+                                        borderColor: 'transparent'
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: '#e0e0e0'
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#FF4444',
+                                        borderWidth: 1
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                )}
+
                 {/* ------------------ RIGHT SECTION ------------------ */}
                 <Stack direction="row" alignItems="center" gap={is600 ? 1 : 2}>
-
                     {/* Wishlist */}
                     {!loggedInUser?.isAdmin && (
                         <Tooltip title="Wishlist">
@@ -172,6 +272,14 @@ export const Navbar = () => {
                             <Typography variant="caption" color="text.secondary">
                                 {userInfo?.email}
                             </Typography>
+                            {loggedInUser?.isAdmin && (
+                                <Chip
+                                    label="Admin"
+                                    size="small"
+                                    color="error"
+                                    sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }}
+                                />
+                            )}
                         </Box>
 
                         <Divider />

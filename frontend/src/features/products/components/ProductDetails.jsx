@@ -23,6 +23,7 @@ import {
     alpha,
     ToggleButton,
     ToggleButtonGroup,
+    Skeleton,
 } from "@mui/material";
 
 import {
@@ -37,14 +38,15 @@ import { selectLoggedInUser } from "../../auth/AuthSlice";
 import {
     fetchReviewsByProductIdAsync,
     resetReviewFetchStatus,
-    selectReviewFetchStatus,
-    selectReviews
+    selectReviews,
 } from "../../review/ReviewSlice";
 
 import { Reviews } from "../../review/components/Reviews";
+
 import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Favorite from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+
 import {
     createWishlistItemAsync,
     deleteWishlistItemByIdAsync,
@@ -65,17 +67,15 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { toast } from "react-toastify";
 import { useTheme } from "@mui/material";
 
-import Lottie from "lottie-react";
-import { loadingAnimation } from "../../../assets";
-
 import { fetchProductStock } from "../ProductApi";
 
 const AutoPlaySwipeableViews = autoPlay(SwipeableViews);
 
-// prevent duplicate toasts for statuses
+// Avoid duplicate toasts for the same status
 const useOnceToast = (status, successMsg, errorMsg, resetAction) => {
     const dispatch = useDispatch();
     const prev = useRef(null);
+
     useEffect(() => {
         if (prev.current !== status) {
             if (status === "fulfilled") {
@@ -92,55 +92,67 @@ const useOnceToast = (status, successMsg, errorMsg, resetAction) => {
 
 export const ProductDetails = () => {
     const { id } = useParams();
-    const product = useSelector(selectSelectedProduct);
-    const loggedInUser = useSelector(selectLoggedInUser);
     const dispatch = useDispatch();
-    const cartItems = useSelector(selectCartItems);
-    const cartItemAddStatus = useSelector(selectCartItemAddStatus);
-    const reviews = useSelector(selectReviews);
-    const [quantity, setQuantity] = useState(1);
-    const [selectedSize, setSelectedSize] = useState(null); // SIZE STATE
-    const [activeStep, setActiveStep] = useState(0);
+    const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-    const navigate = useNavigate();
 
-    const wishlistItems = useSelector(selectWishlistItems);
+    const product = useSelector(selectSelectedProduct);
+    const loggedInUser = useSelector(selectLoggedInUser);
+    const cartItems = useSelector(selectCartItems);
+    const cartItemAddStatus = useSelector(selectCartItemAddStatus);
+
+    // ✅ FIXED: Ensure wishlistItems is always an array
+    const wishlistItems = useSelector(selectWishlistItems) || [];
+
     const wishlistItemAddStatus = useSelector(selectWishlistItemAddStatus);
     const wishlistItemDeleteStatus = useSelector(selectWishlistItemDeleteStatus);
-
+    const reviews = useSelector(selectReviews);
     const productFetchStatus = useSelector(selectProductFetchStatus);
-    const reviewFetchStatus = useSelector(selectReviewFetchStatus);
 
+    const [quantity, setQuantity] = useState(1);
+    const [selectedSize, setSelectedSize] = useState(null);
+    const [activeStep, setActiveStep] = useState(0);
+    const [liveStock, setLiveStock] = useState(0);
+    const [isUnavailable, setIsUnavailable] = useState(false);
+
+    const unavailableToastShownRef = useRef(false);
+
+    const isInCart = cartItems.some(
+        (item) => item.product && item.product._id === id
+    );
+
+    // ✅ FIXED: Safe check with Array.isArray
+    const isInWishlist = Array.isArray(wishlistItems)
+        ? wishlistItems.some((item) => item.product && item.product._id === id)
+        : false;
+
+    // Reviews / rating
     const totalReviews = reviews.length;
     const avgRating = totalReviews
         ? Math.ceil(reviews.reduce((a, b) => a + b.rating, 0) / totalReviews)
         : 0;
 
-    const isInCart = cartItems.some((item) => item.product._id === id);
-    const isInWishlist = wishlistItems.some((item) => item.product._id === id);
-
-    // Live stock state
-    const [liveStock, setLiveStock] = useState(0);
-
-    // ✅ FIXED: Use sizes from database - show if sizes exist, regardless of requiresSize flag
+    // Size handling
     const showSizeSelector = product?.sizes && product.sizes.length > 0;
     const availableSizes = product?.sizes || [];
     const isSizeRequired = product?.requiresSize === true;
 
-    // Toast handlers
+    // Toasts for cart / wishlist operations
     useOnceToast(
         cartItemAddStatus,
         "Product added to cart",
         "Failed to add to cart",
         resetCartItemAddStatus
     );
+
     useOnceToast(
         wishlistItemAddStatus,
         "Product added to wishlist",
         "Failed to add to wishlist",
         resetWishlistItemAddStatus
     );
+
     useOnceToast(
         wishlistItemDeleteStatus,
         "Product removed from wishlist",
@@ -148,10 +160,12 @@ export const ProductDetails = () => {
         resetWishlistItemDeleteStatus
     );
 
+    // Scroll to top on mount
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
     }, []);
 
+    // Fetch product + reviews
     useEffect(() => {
         if (id) {
             dispatch(fetchProductByIdAsync(id));
@@ -159,16 +173,17 @@ export const ProductDetails = () => {
         }
     }, [id, dispatch]);
 
-    // Sync liveStock when product loads/changes
+    // Sync live stock when product changes
     useEffect(() => {
         if (product) {
             setLiveStock(product.stockQuantity ?? 0);
         }
     }, [product]);
 
-    // Auto-refresh stock from backend
+    // ✅ FIXED: Auto-refresh stock - stop for deleted/unavailable products
     useEffect(() => {
-        if (!product?._id) return;
+        // Stop polling if no product, or if product is deleted/unavailable
+        if (!product?._id || product?.isDeleted || isUnavailable) return;
 
         let isMounted = true;
 
@@ -183,25 +198,52 @@ export const ProductDetails = () => {
                 ) {
                     setLiveStock(data.stockQuantity);
 
-                    toast.info(
-                        `Stock updated – ${data.stockQuantity} left`,
-                        { toastId: `stock-update-${product._id}` }
-                    );
+                    toast.info(`Stock updated – ${data.stockQuantity} left`, {
+                        toastId: `stock-update-${product._id}`,
+                    });
                 }
             } catch (err) {
+                // Silent fail, don't spam user for stock polling issues
                 console.log("Stock refresh failed", err?.message || err);
             }
         };
 
         refreshStock();
-
         const interval = setInterval(refreshStock, 5000);
+
         return () => {
             isMounted = false;
             clearInterval(interval);
         };
-    }, [product?._id, liveStock]);
+    }, [product?._id, product?.isDeleted, isUnavailable, liveStock]);
 
+    // Track unavailable/deleted state and toast once
+    useEffect(() => {
+        // Backend might:
+        // 1. Return 404/410 -> slice sets status = 'rejected' and product = null
+        // 2. Return product with isDeleted true (FIXED: now returns this)
+
+        const deletedFromStatus =
+            productFetchStatus === "rejected" && !product && !isUnavailable;
+
+        const deletedFromFlag = !!product?.isDeleted;
+
+        const nowUnavailable = deletedFromStatus || deletedFromFlag;
+
+        if (nowUnavailable) {
+            setIsUnavailable(true);
+
+            if (!unavailableToastShownRef.current) {
+                toast.error("This product is no longer available");
+                unavailableToastShownRef.current = true;
+            }
+        } else if (product && !product.isDeleted && productFetchStatus === "fulfilled") {
+            // Successfully loaded non-deleted product
+            setIsUnavailable(false);
+        }
+    }, [productFetchStatus, product, isUnavailable]);
+
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             dispatch(clearSelectedProduct());
@@ -216,8 +258,18 @@ export const ProductDetails = () => {
             return;
         }
 
+        if (isUnavailable) {
+            toast.error("This product is no longer available");
+            return;
+        }
+
         if (liveStock <= 0) {
             toast.error("This product is out of stock");
+            return;
+        }
+
+        if (!product) {
+            toast.error("This product is no longer available");
             return;
         }
 
@@ -226,7 +278,6 @@ export const ProductDetails = () => {
             return;
         }
 
-        // ✅ Check if size is required (only if requiresSize flag is true)
         if (showSizeSelector && isSizeRequired && !selectedSize) {
             toast.error("Please select a size");
             return;
@@ -237,14 +288,19 @@ export const ProductDetails = () => {
                 user: loggedInUser._id,
                 product: id,
                 quantity,
-                size: selectedSize // PASS SIZE TO CART
+                size: selectedSize,
             })
         );
         setQuantity(1);
-        setSelectedSize(null); // Reset size after adding
+        setSelectedSize(null);
     };
 
     const handleBuyNowNavigate = () => {
+        if (isUnavailable) {
+            toast.error("This product is no longer available");
+            return;
+        }
+
         if (liveStock <= 0) {
             toast.error("This product is out of stock");
             return;
@@ -255,7 +311,6 @@ export const ProductDetails = () => {
             return;
         }
 
-        // ✅ Check if size is required (only if requiresSize flag is true)
         if (showSizeSelector && isSizeRequired && !selectedSize) {
             toast.error("Please select a size");
             return;
@@ -269,37 +324,180 @@ export const ProductDetails = () => {
                 price: product.price,
                 thumbnail: product.images?.[0] || product.thumbnail,
                 brand: { name: product.brand?.name },
-                stockQuantity: liveStock
+                stockQuantity: liveStock,
             },
             quantity,
-            size: selectedSize // PASS SIZE
+            size: selectedSize,
         };
 
         navigate("/checkout", { state: { selectedItems: [productForCheckout] } });
     };
 
+    const disabledActions =
+        isUnavailable || liveStock <= 0 || (showSizeSelector && isSizeRequired && !selectedSize);
+
+    const maxSteps = product?.images?.length || 0;
+
+    // ------------------------------------------------------------------
+    // SKELETON: while loading product
+    // ------------------------------------------------------------------
     if (productFetchStatus === "pending") {
         return (
-            <Stack height="60vh" justifyContent="center" alignItems="center">
-                <Lottie animationData={loadingAnimation} style={{ width: 320 }} />
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    bgcolor: alpha(theme.palette.grey[50], 0.3),
+                }}
+            >
+                <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+                    <Stack
+                        direction={isMobile ? "column" : "row"}
+                        spacing={4}
+                        width="100%"
+                    >
+                        {/* Image skeleton */}
+                        <Stack width={isMobile ? "100%" : "50%"}>
+                            <Skeleton
+                                variant="rectangular"
+                                sx={{ width: "100%", height: isMobile ? 260 : 420, borderRadius: 2 }}
+                            />
+                        </Stack>
+
+                        {/* Details skeleton */}
+                        <Stack width={isMobile ? "100%" : "50%"} spacing={2}>
+                            <Skeleton variant="text" width="80%" height={40} />
+                            <Skeleton variant="text" width="40%" height={30} />
+                            <Skeleton variant="text" width="30%" height={30} />
+                            <Skeleton variant="rectangular" width="100%" height={80} />
+                            <Skeleton variant="rectangular" width="60%" height={48} />
+                            <Skeleton variant="rectangular" width="50%" height={48} />
+                        </Stack>
+                    </Stack>
+
+                    <Box sx={{ mt: 5 }}>
+                        <Skeleton variant="text" width="30%" height={32} />
+                        <Skeleton variant="rectangular" width="100%" height={160} />
+                    </Box>
+                </Container>
+            </Box>
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // UNAVAILABLE / DELETED: show disabled layout + message
+    // (productFetchStatus === 'rejected' OR product?.isDeleted === true)
+    // ------------------------------------------------------------------
+    if (!product && isUnavailable) {
+        return (
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    bgcolor: alpha(theme.palette.grey[50], 0.3),
+                }}
+            >
+                <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
+                    <Stack spacing={3} alignItems="center">
+                        <Typography
+                            variant="h5"
+                            fontWeight={700}
+                            color="error.main"
+                            textAlign="center"
+                        >
+                            This product is no longer available.
+                        </Typography>
+
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            textAlign="center"
+                            maxWidth={480}
+                        >
+                            It may have been removed or is temporarily unavailable. You can
+                            continue shopping to explore other products.
+                        </Typography>
+
+                        <Button
+                            variant="contained"
+                            component={Link}
+                            to="/"
+                            sx={{ textTransform: "none", px: 3, py: 1.1 }}
+                        >
+                            Continue Shopping
+                        </Button>
+
+                        {/* Skeleton card to keep visual structure */}
+                        <Stack
+                            direction={isMobile ? "column" : "row"}
+                            spacing={4}
+                            width="100%"
+                            sx={{ mt: 4 }}
+                        >
+                            <Stack width={isMobile ? "100%" : "50%"}>
+                                <Skeleton
+                                    variant="rectangular"
+                                    sx={{
+                                        width: "100%",
+                                        height: isMobile ? 260 : 420,
+                                        borderRadius: 2,
+                                    }}
+                                />
+                            </Stack>
+                            <Stack width={isMobile ? "100%" : "50%"} spacing={2}>
+                                <Skeleton variant="text" width="80%" height={40} />
+                                <Skeleton variant="text" width="40%" height={30} />
+                                <Skeleton variant="rectangular" width="100%" height={80} />
+                                <Skeleton variant="rectangular" width="60%" height={48} />
+                                <Skeleton variant="rectangular" width="50%" height={48} />
+                            </Stack>
+                        </Stack>
+                    </Stack>
+                </Container>
+            </Box>
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // NORMAL RENDER (product loaded; may still be marked unavailable)
+    // ------------------------------------------------------------------
+    if (!product) {
+        // Fallback safety: unknown error but not explicitly marked unavailable
+        return (
+            <Stack
+                minHeight="60vh"
+                alignItems="center"
+                justifyContent="center"
+                spacing={2}
+            >
+                <Typography variant="h6">
+                    Unable to load this product at the moment.
+                </Typography>
+                <Button
+                    variant="contained"
+                    component={Link}
+                    to="/"
+                    sx={{ textTransform: "none" }}
+                >
+                    Continue Shopping
+                </Button>
             </Stack>
         );
     }
 
-    if (!product) return null;
-
-    const maxSteps = product.images?.length || 0;
-
     return (
-        <Box sx={{ minHeight: '100vh', bgcolor: alpha(theme.palette.grey[50], 0.3) }}>
-            {/* Desktop: Top Bar with Back Button */}
+        <Box
+            sx={{
+                minHeight: "100vh",
+                bgcolor: alpha(theme.palette.grey[50], 0.3),
+            }}
+        >
+            {/* Desktop top bar */}
             {!isMobile && (
                 <Box
                     sx={{
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: 'white',
-                        py: 2.5
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        bgcolor: "white",
+                        py: 2.5,
                     }}
                 >
                     <Container maxWidth="lg">
@@ -307,13 +505,13 @@ export const ProductDetails = () => {
                             <IconButton
                                 onClick={() => navigate(-1)}
                                 sx={{
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    '&:hover': {
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    "&:hover": {
                                         bgcolor: alpha(theme.palette.grey[100], 0.5),
-                                        transform: 'translateX(-3px)'
+                                        transform: "translateX(-3px)",
                                     },
-                                    transition: 'all 0.2s'
+                                    transition: "all 0.2s",
                                 }}
                             >
                                 <ArrowBackIcon />
@@ -329,20 +527,25 @@ export const ProductDetails = () => {
             )}
 
             <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-                {/* Mobile: Back Button with Header */}
+                {/* Mobile back button */}
                 {isMobile && (
-                    <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 2 }}>
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        gap={1.5}
+                        sx={{ mb: 2 }}
+                    >
                         <IconButton
                             onClick={() => navigate(-1)}
                             sx={{
-                                bgcolor: 'white',
+                                bgcolor: "white",
                                 boxShadow: 1,
-                                '&:hover': {
-                                    bgcolor: 'white',
-                                    transform: 'translateX(-3px)',
-                                    boxShadow: 2
+                                "&:hover": {
+                                    bgcolor: "white",
+                                    transform: "translateX(-3px)",
+                                    boxShadow: 2,
                                 },
-                                transition: 'all 0.2s'
+                                transition: "all 0.2s",
                             }}
                         >
                             <ArrowBackIcon fontSize="small" />
@@ -351,6 +554,36 @@ export const ProductDetails = () => {
                             Product Details
                         </Typography>
                     </Stack>
+                )}
+
+                {/* Unavailable banner */}
+                {isUnavailable && (
+                    <Box
+                        sx={{
+                            mb: 3,
+                            p: 2,
+                            borderRadius: 2,
+                            bgcolor: alpha(theme.palette.error.main, 0.06),
+                            border: "1px solid",
+                            borderColor: alpha(theme.palette.error.main, 0.3),
+                        }}
+                    >
+                        <Typography
+                            variant="body1"
+                            fontWeight={600}
+                            color="error.main"
+                        >
+                            This product is no longer available.
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 0.5 }}
+                        >
+                            You can still view its details, but you will not be able to add it
+                            to cart or wishlist.
+                        </Typography>
+                    </Box>
                 )}
 
                 <Stack
@@ -362,11 +595,12 @@ export const ProductDetails = () => {
                     <Stack width={isMobile ? "100%" : "50%"}>
                         <Box
                             sx={{
-                                bgcolor: 'white',
+                                bgcolor: "white",
                                 borderRadius: 2,
-                                overflow: 'hidden',
-                                border: '1px solid',
-                                borderColor: 'divider'
+                                overflow: "hidden",
+                                border: "1px solid",
+                                borderColor: "divider",
+                                position: "relative",
                             }}
                         >
                             <AutoPlaySwipeableViews
@@ -374,7 +608,7 @@ export const ProductDetails = () => {
                                 onChangeIndex={(i) => setActiveStep(i)}
                                 enableMouseEvents
                             >
-                                {product.images?.map((img, i) => (
+                                {(product.images || []).map((img, i) => (
                                     <Box
                                         key={i}
                                         sx={{
@@ -383,7 +617,10 @@ export const ProductDetails = () => {
                                             display: "flex",
                                             justifyContent: "center",
                                             alignItems: "center",
-                                            p: 2
+                                            p: 2,
+                                            filter: isUnavailable ? "grayscale(0.9)" : "none",
+                                            opacity: isUnavailable ? 0.7 : 1,
+                                            transition: "filter 0.2s, opacity 0.2s",
                                         }}
                                     >
                                         <img
@@ -405,9 +642,9 @@ export const ProductDetails = () => {
                                     position="static"
                                     activeStep={activeStep}
                                     sx={{
-                                        bgcolor: 'transparent',
-                                        borderTop: '1px solid',
-                                        borderColor: 'divider'
+                                        bgcolor: "transparent",
+                                        borderTop: "1px solid",
+                                        borderColor: "divider",
                                     }}
                                     nextButton={
                                         <IconButton
@@ -440,41 +677,72 @@ export const ProductDetails = () => {
                     <Stack width={isMobile ? "100%" : "50%"} spacing={2}>
                         <Box
                             sx={{
-                                bgcolor: 'white',
+                                bgcolor: "white",
                                 p: { xs: 2, md: 3 },
                                 borderRadius: 2,
-                                border: '1px solid',
-                                borderColor: 'divider'
+                                border: "1px solid",
+                                borderColor: "divider",
                             }}
                         >
                             <Stack spacing={2.5}>
-                                <Typography variant={isMobile ? "h5" : "h4"} fontWeight={700}>
+                                <Typography
+                                    variant={isMobile ? "h5" : "h4"}
+                                    fontWeight={700}
+                                >
                                     {product.title}
                                 </Typography>
 
                                 <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Rating value={avgRating} readOnly size={isMobile ? "small" : "medium"} />
+                                    <Rating
+                                        value={avgRating}
+                                        readOnly
+                                        size={isMobile ? "small" : "medium"}
+                                    />
                                     <Typography variant="body2" color="text.secondary">
                                         ({totalReviews} Reviews)
                                     </Typography>
                                 </Stack>
 
-                                <Typography variant={isMobile ? "h5" : "h4"} fontWeight={700} color="primary.main">
+                                <Typography
+                                    variant={isMobile ? "h5" : "h4"}
+                                    fontWeight={700}
+                                    color="primary.main"
+                                >
                                     ₹{product.price}
                                 </Typography>
 
-                                <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                                <Typography
+                                    color="text.secondary"
+                                    sx={{ lineHeight: 1.7 }}
+                                >
                                     {product.description}
                                 </Typography>
 
-                                {/* ✅ SIZE SELECTOR - UPDATED TO USE DATABASE SIZES */}
+                                {/* Size Selector */}
                                 {showSizeSelector && (
                                     <Box>
-                                        <Typography variant="body2" fontWeight={600} mb={1.5}>
-                                            Select Size {isSizeRequired && <Typography component="span" color="error.main">*</Typography>}
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={600}
+                                            mb={1.5}
+                                        >
+                                            Select Size{" "}
+                                            {isSizeRequired && (
+                                                <Typography
+                                                    component="span"
+                                                    color="error.main"
+                                                >
+                                                    *
+                                                </Typography>
+                                            )}
                                             {selectedSize && (
-                                                <Typography component="span" color="primary.main" fontWeight={700}>
-                                                    {' '}({selectedSize})
+                                                <Typography
+                                                    component="span"
+                                                    color="primary.main"
+                                                    fontWeight={700}
+                                                >
+                                                    {" "}
+                                                    ({selectedSize})
                                                 </Typography>
                                             )}
                                         </Typography>
@@ -483,124 +751,142 @@ export const ProductDetails = () => {
                                             exclusive
                                             onChange={(e, newSize) => setSelectedSize(newSize)}
                                             sx={{
-                                                display: 'flex',
-                                                flexWrap: 'wrap',
-                                                gap: 1
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: 1,
                                             }}
                                         >
                                             {availableSizes.map((size) => (
                                                 <ToggleButton
                                                     key={size}
                                                     value={size}
+                                                    disabled={isUnavailable}
                                                     sx={{
                                                         minWidth: { xs: 45, md: 55 },
                                                         height: { xs: 40, md: 45 },
                                                         borderRadius: 1.5,
                                                         fontWeight: 600,
-                                                        border: '1.5px solid',
-                                                        borderColor: 'divider',
-                                                        '&.Mui-selected': {
-                                                            bgcolor: 'primary.main',
-                                                            color: 'white',
-                                                            borderColor: 'primary.main',
-                                                            '&:hover': {
-                                                                bgcolor: 'primary.dark'
-                                                            }
+                                                        border: "1.5px solid",
+                                                        borderColor: "divider",
+                                                        "&.Mui-selected": {
+                                                            bgcolor: "primary.main",
+                                                            color: "white",
+                                                            borderColor: "primary.main",
+                                                            "&:hover": {
+                                                                bgcolor: "primary.dark",
+                                                            },
                                                         },
-                                                        '&:hover': {
-                                                            borderColor: 'primary.main',
-                                                            bgcolor: alpha(theme.palette.primary.main, 0.04)
-                                                        }
+                                                        "&:hover": {
+                                                            borderColor: "primary.main",
+                                                            bgcolor: alpha(
+                                                                theme.palette.primary.main,
+                                                                0.04
+                                                            ),
+                                                        },
                                                     }}
                                                 >
                                                     {size}
                                                 </ToggleButton>
                                             ))}
                                         </ToggleButtonGroup>
-                                        {isSizeRequired && !selectedSize && (
+                                        {isSizeRequired && !selectedSize && !isUnavailable && (
                                             <Typography
                                                 variant="caption"
                                                 color="error.main"
                                                 sx={{
                                                     mt: 1,
-                                                    display: 'block',
-                                                    fontWeight: 500
+                                                    display: "block",
+                                                    fontWeight: 500,
                                                 }}
                                             >
                                                 * Size selection required
                                             </Typography>
                                         )}
-                                        {!isSizeRequired && (
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                sx={{
-                                                    mt: 1,
-                                                    display: 'block',
-                                                    fontStyle: 'italic'
-                                                }}
-                                            >
-                                            </Typography>
-                                        )}
                                     </Box>
                                 )}
 
+                                {/* Stock indicator */}
                                 <Box
                                     sx={{
                                         p: 1.5,
                                         borderRadius: 1.5,
-                                        bgcolor: liveStock <= 0
+                                        bgcolor: isUnavailable
                                             ? alpha(theme.palette.error.main, 0.08)
-                                            : liveStock <= 10
-                                                ? alpha(theme.palette.warning.main, 0.08)
-                                                : alpha(theme.palette.success.main, 0.08),
-                                        border: '1px solid',
-                                        borderColor: liveStock <= 0
-                                            ? alpha(theme.palette.error.main, 0.2)
-                                            : liveStock <= 10
-                                                ? alpha(theme.palette.warning.main, 0.2)
-                                                : alpha(theme.palette.success.main, 0.2)
+                                            : liveStock <= 0
+                                                ? alpha(theme.palette.error.main, 0.08)
+                                                : liveStock <= 10
+                                                    ? alpha(theme.palette.warning.main, 0.08)
+                                                    : alpha(theme.palette.success.main, 0.08),
+                                        border: "1px solid",
+                                        borderColor: isUnavailable
+                                            ? alpha(theme.palette.error.main, 0.3)
+                                            : liveStock <= 0
+                                                ? alpha(theme.palette.error.main, 0.2)
+                                                : liveStock <= 10
+                                                    ? alpha(theme.palette.warning.main, 0.2)
+                                                    : alpha(theme.palette.success.main, 0.2),
                                     }}
                                 >
                                     <Typography
                                         fontWeight={600}
                                         color={
-                                            liveStock <= 0
+                                            isUnavailable
                                                 ? "error.main"
-                                                : liveStock <= 10
-                                                    ? "warning.main"
-                                                    : "success.main"
+                                                : liveStock <= 0
+                                                    ? "error.main"
+                                                    : liveStock <= 10
+                                                        ? "warning.main"
+                                                        : "success.main"
                                         }
                                     >
-                                        {liveStock <= 0
-                                            ? "⚠️ Out of stock"
-                                            : liveStock <= 10
-                                                ? `⚡ Only ${liveStock} left in stock`
-                                                : "✓ In Stock"}
+                                        {isUnavailable
+                                            ? "This product is no longer available"
+                                            : liveStock <= 0
+                                                ? "⚠️ Out of stock"
+                                                : liveStock <= 10
+                                                    ? `⚡ Only ${liveStock} left in stock`
+                                                    : "✓ In Stock"}
                                     </Typography>
                                 </Box>
 
-                                {/* Quantity + Actions */}
+                                {/* Quantity + actions */}
                                 <Stack spacing={2} mt={2}>
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <Typography variant="body2" fontWeight={600}>
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={600}
+                                        >
                                             Quantity:
                                         </Typography>
                                         <Button
                                             variant="outlined"
                                             size="small"
                                             sx={{ minWidth: 36, height: 36 }}
-                                            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                                            disabled={isUnavailable}
+                                            onClick={() =>
+                                                setQuantity((q) => Math.max(1, q - 1))
+                                            }
                                         >
                                             -
                                         </Button>
-                                        <Typography fontWeight={600} sx={{ minWidth: 30, textAlign: 'center' }}>
+                                        <Typography
+                                            fontWeight={600}
+                                            sx={{
+                                                minWidth: 30,
+                                                textAlign: "center",
+                                            }}
+                                        >
                                             {quantity}
                                         </Typography>
                                         <Button
                                             variant="contained"
                                             size="small"
                                             sx={{ minWidth: 36, height: 36 }}
+                                            disabled={isUnavailable || liveStock <= 0}
                                             onClick={() => {
                                                 if (quantity < liveStock) {
                                                     setQuantity(quantity + 1);
@@ -612,7 +898,6 @@ export const ProductDetails = () => {
                                                     );
                                                 }
                                             }}
-                                            disabled={liveStock <= 0}
                                         >
                                             +
                                         </Button>
@@ -628,10 +913,10 @@ export const ProductDetails = () => {
                                                 py: 1.5,
                                                 fontSize: "1rem",
                                                 fontWeight: 600,
-                                                borderRadius: 1.5
+                                                borderRadius: 1.5,
                                             }}
                                             onClick={handleBuyNowNavigate}
-                                            disabled={liveStock <= 0 || (showSizeSelector && isSizeRequired && !selectedSize)}
+                                            disabled={disabledActions}
                                         >
                                             Buy Now
                                         </Button>
@@ -649,7 +934,7 @@ export const ProductDetails = () => {
                                                 "&:hover": { bgcolor: "rgba(0,0,0,0.85)" },
                                             }}
                                             onClick={handleAddToCart}
-                                            disabled={liveStock <= 0 || (showSizeSelector && isSizeRequired && !selectedSize)}
+                                            disabled={disabledActions}
                                         >
                                             Add to Cart
                                         </Button>
@@ -662,16 +947,24 @@ export const ProductDetails = () => {
                                         sx={{
                                             p: 1,
                                             borderRadius: 1.5,
-                                            border: '1px solid',
-                                            borderColor: 'divider',
-                                            bgcolor: alpha(theme.palette.grey[50], 0.5)
+                                            border: "1px solid",
+                                            borderColor: "divider",
+                                            bgcolor: alpha(theme.palette.grey[50], 0.5),
                                         }}
                                     >
                                         <Checkbox
                                             checked={isInWishlist}
+                                            disabled={isUnavailable}
                                             onChange={(e) => {
                                                 if (!loggedInUser) {
                                                     toast.error("Please login to manage wishlist");
+                                                    return;
+                                                }
+
+                                                if (isUnavailable) {
+                                                    toast.error(
+                                                        "This product is no longer available"
+                                                    );
                                                     return;
                                                 }
 
@@ -684,7 +977,8 @@ export const ProductDetails = () => {
                                                     );
                                                 } else {
                                                     const existing = wishlistItems.find(
-                                                        (i) => i.product._id === id
+                                                        (i) =>
+                                                            i.product && i.product._id === id
                                                     );
                                                     if (existing) {
                                                         dispatch(
@@ -694,9 +988,13 @@ export const ProductDetails = () => {
                                                 }
                                             }}
                                             icon={<FavoriteBorder />}
-                                            checkedIcon={<Favorite sx={{ color: "red" }} />}
+                                            checkedIcon={
+                                                <Favorite sx={{ color: "red" }} />
+                                            }
                                         />
-                                        <Typography fontWeight={500}>Add to Wishlist</Typography>
+                                        <Typography fontWeight={500}>
+                                            Add to Wishlist
+                                        </Typography>
                                     </Stack>
                                 </Stack>
                             </Stack>
