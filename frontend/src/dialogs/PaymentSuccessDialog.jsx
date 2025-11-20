@@ -1,3 +1,5 @@
+// frontend/src/components/PaymentSuccessDialog.jsx
+
 import React from 'react';
 import {
     Dialog,
@@ -113,7 +115,6 @@ const PaymentSuccessDialog = ({ open, orderId, onViewOrder }) => {
                     <Button
                         variant="contained"
                         color="success"
-                        onClick={onViewOrder}
                         sx={{
                             textTransform: 'none',
                             mt: 1,
@@ -122,8 +123,9 @@ const PaymentSuccessDialog = ({ open, orderId, onViewOrder }) => {
                             borderRadius: 2,
                             fontWeight: 600
                         }}
+                        onClick={() => onViewOrder(orderId)}   // 🚀 GUARANTEED TO WORK
                     >
-                        View Order Details
+                        Continue Shopping
                     </Button>
 
                     {/* Confetti */}

@@ -45,7 +45,11 @@ import { SHIPPING, TAXES } from '../../../constants'
 import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { axiosi } from '../../../config/axios'
-import OTPDialog from '../../../dialogs/OTPDialog'
+/* ====================== OTP DISABLED (OPTION A) ======================
+// All OTP related imports are commented out but retained for reference/testing.
+// OTPDialog used to be imported here for Firebase OTP verification.
+// import OTPDialog from '../../../dialogs/OTPDialog'
+*/
 import PaymentSuccessDialog from '../../../dialogs/PaymentSuccessDialog';
 
 // Load Razorpay script once
@@ -81,11 +85,17 @@ export const Checkout = () => {
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [isOnlinePaying, setIsOnlinePaying] = useState(false)
 
+    /* ====================== OTP DISABLED (OPTION A) ======================
+       Retaining OTP related state and helpers as commented blocks so you can
+       re-enable later without losing logic. All lines between the markers
+       are inactive (commented) — they are the previous OTP flow.
+
     // OTP state (Firebase)
-    const [otpDialogOpen, setOtpDialogOpen] = useState(false)
-    const [otpTargetPhone, setOtpTargetPhone] = useState('')
-    const [firebasePhoneToken, setFirebasePhoneToken] = useState(null)
-    const [otpVerifiedPhone, setOtpVerifiedPhone] = useState(null)
+    // const [otpDialogOpen, setOtpDialogOpen] = useState(false)
+    // const [otpTargetPhone, setOtpTargetPhone] = useState('')
+    // const [firebasePhoneToken, setFirebasePhoneToken] = useState(null)
+    // const [otpVerifiedPhone, setOtpVerifiedPhone] = useState(null)
+    */
 
     // Payment success animation state
     const [showSuccessAnimation, setShowSuccessAnimation] = useState({
@@ -183,25 +193,31 @@ export const Checkout = () => {
     const finalizeCartAfterOrder = useCallback(
         async (orderId) => {
             try {
-                const onlySelected = passedSelectedItems || null
+                const onlySelected = passedSelectedItems || null;
 
                 if (onlySelected) {
                     await Promise.all(
                         onlySelected
                             .filter(ci => ci.cartItemId)
-                            .map(ci => dispatch(deleteCartItemByIdAsync(ci.cartItemId)).unwrap())
-                    )
+                            .map(ci =>
+                                dispatch(deleteCartItemByIdAsync(ci.cartItemId)).unwrap()
+                            )
+                    );
                 } else if (!formattedBuyNowItem && loggedInUser?._id) {
-                    await dispatch(resetCartByUserIdAsync(loggedInUser._id)).unwrap()
+                    await dispatch(resetCartByUserIdAsync(loggedInUser._id)).unwrap();
                 }
 
-                navigate(`/order-success/${orderId}`)
+                // ❌ DO NOT NAVIGATE HERE
+                // navigate(`/order-success/${orderId}`);
+
             } catch (err) {
-                navigate(`/order-success/${orderId}`)
+                // ❌ ALSO REMOVE THIS
+                // navigate(`/order-success/${orderId}`);
             }
         },
         [dispatch, navigate, passedSelectedItems, formattedBuyNowItem, loggedInUser]
-    )
+    );
+
 
     // Add new address
     const handleAddAddress = (data) => {
@@ -212,7 +228,7 @@ export const Checkout = () => {
         dispatch(addAddressAsync({ ...data, user: loggedInUser._id }))
     }
 
-    // Core Razorpay payment flow (called only AFTER OTP is verified)
+    // Core Razorpay payment flow (previously required OTP before calling this)
     const handleRazorpayPayment = async () => {
         try {
             if (!loggedInUser?._id) {
@@ -232,10 +248,16 @@ export const Checkout = () => {
                 return
             }
 
-            if (!firebasePhoneToken) {
-                toast.error('Please verify your mobile number before payment.')
-                return
-            }
+            /* ====================== OTP DISABLED (OPTION A) ======================
+               Previously we enforced firebasePhoneToken presence here:
+               if (!firebasePhoneToken) {
+                   toast.error('Please verify your mobile number before payment.')
+                   return
+               }
+               That check is now disabled. For record-keeping, the firebase token
+               was sent as firebasePhoneToken in the payload. We will NOT include
+               firebasePhoneToken in the payload while OTP is disabled.
+            */
 
             const scriptLoaded = await loadRazorpayScript()
             if (!scriptLoaded || !window.Razorpay) {
@@ -252,6 +274,7 @@ export const Checkout = () => {
                 size: it.size || null
             }))
 
+            // NOTE: firebasePhoneToken removed from payload while OTP is disabled
             const payload = {
                 user: loggedInUser._id,
                 userEmail: loggedInUser.email,
@@ -262,8 +285,8 @@ export const Checkout = () => {
                 shippingCharge: SHIPPING,
                 taxAmount: TAXES,
                 finalAmount: orderTotal,
-                paymentMode: 'RAZORPAY',
-                firebasePhoneToken: firebasePhoneToken
+                paymentMode: 'RAZORPAY'
+                // firebasePhoneToken: firebasePhoneToken  <-- removed while OTP is disabled
             }
 
             const { data } = await axiosi.post('/orders/razorpay/create', payload)
@@ -331,7 +354,23 @@ export const Checkout = () => {
     const normalizePhone = (phone) =>
         (phone || '').toString().replace(/\D/g, '').slice(-10)
 
-    // Click handler for "Pay" – enforces OTP BEFORE calling Razorpay
+
+    const handleViewOrder = (orderId) => {
+        if (!orderId) {
+            toast.error("Order ID missing");
+            return;
+        }
+
+        navigate(`/order-success/${orderId}`);
+
+        setTimeout(() => {
+            finalizeCartAfterOrder(orderId);
+            setShowSuccessAnimation({ open: false, orderId: null });
+        }, 50);
+    };
+
+    // Click handler for "Pay" – previously enforced OTP BEFORE calling Razorpay.
+    // Now OTP is bypassed and handleRazorpayPayment is called directly.
     const handlePayClick = () => {
         if (!selectedAddress) {
             toast.error('Please select an address.')
@@ -356,26 +395,32 @@ export const Checkout = () => {
             return
         }
 
-        if (firebasePhoneToken && otpVerifiedPhone === normalized) {
-            handleRazorpayPayment()
-            return
-        }
+        /* ====================== OTP DISABLED (OPTION A) ======================
+           Previously: If firebasePhoneToken & otpVerifiedPhone matched we
+           proceeded -> otherwise we opened OTPDialog to verify and then call
+           handleRazorpayPayment. Now we bypass OTP entirely and call payment
+           directly. The old flow is preserved above/below as commented code.
+        */
 
-        setOtpTargetPhone(normalized)
-        setOtpDialogOpen(true)
-    }
-
-    // Callback when OTPDialog verifies successfully
-    const handleOtpVerified = (idToken) => {
-        const basePhone = selectedAddress?.phoneNumber || otpTargetPhone
-        const normalized = normalizePhone(basePhone)
-
-        setFirebasePhoneToken(idToken)
-        setOtpVerifiedPhone(normalized)
-        setOtpDialogOpen(false)
-
+        // Directly proceed to payment (OTP bypassed)
         handleRazorpayPayment()
     }
+
+    /* ====================== OTP DISABLED (OPTION A) ======================
+       Old OTP callback retained as commented for future re-enable.
+
+    // Callback when OTPDialog verifies successfully
+    // const handleOtpVerified = (idToken) => {
+    //     const basePhone = selectedAddress?.phoneNumber || otpTargetPhone
+    //     const normalized = normalizePhone(basePhone)
+    //
+    //     setFirebasePhoneToken(idToken)
+    //     setOtpVerifiedPhone(normalized)
+    //     setOtpDialogOpen(false)
+    //
+    //     handleRazorpayPayment()
+    // }
+    */
 
     const getAddressIcon = (type) => {
         const lowerType = type?.toLowerCase() || ''
@@ -1025,7 +1070,7 @@ export const Checkout = () => {
                                                         </Typography>
                                                         <Grid container spacing={2}>
                                                             {addresses.map(address => (
-                                                                <Grid item xs={12} lg={6} key={address._id}>
+                                                                <Grid item xs={12} lg={6} key={address._1d || address._id}>
                                                                     <Paper
                                                                         elevation={0}
                                                                         onClick={() => setSelectedAddressId(address._id)}
@@ -1482,11 +1527,7 @@ export const Checkout = () => {
                                                     <Typography variant="h6" fontWeight={700}>
                                                         Total Amount
                                                     </Typography>
-                                                    <Typography
-                                                        variant="h5"
-                                                        fontWeight={800}
-                                                        color="primary.main"
-                                                    >
+                                                    <Typography variant="h5" fontWeight={800} color="primary.main">
                                                         ₹{orderTotal.toFixed(2)}
                                                     </Typography>
                                                 </Stack>
@@ -1557,18 +1598,22 @@ export const Checkout = () => {
             <PaymentSuccessDialog
                 open={showSuccessAnimation.open}
                 orderId={showSuccessAnimation.orderId}
-                onViewOrder={() => {
-                    finalizeCartAfterOrder(showSuccessAnimation.orderId);
-                    setShowSuccessAnimation({ open: false, orderId: null });
-                }}
+                onViewOrder={handleViewOrder}
             />
 
+
+            {/* ====================== OTP DISABLED (OPTION A) ======================
+                The OTPDialog render is commented out so OTP is completely bypassed.
+                Re-enable by un-commenting the block and the OTP import at the top.
+            */}
+            {/*
             <OTPDialog
                 open={otpDialogOpen}
                 phone={otpTargetPhone}
                 onVerified={handleOtpVerified}
                 onClose={() => setOtpDialogOpen(false)}
             />
+            */}
         </Box>
     )
 }

@@ -273,64 +273,6 @@ export const ProductList = () => {
             }}>
                 <ProductBanner images={bannerImages} />
             </Box>
-
-            {/* SEARCH + SORT + FILTER - DESKTOP */}
-            {!isMobile && !loggedInUser?.isAdmin && (
-                <Box
-                    sx={{
-                        mt: 3,
-                        px: { xs: 2, sm: 3, md: 4 },
-                        maxWidth: "1400px",
-                        mx: "auto"
-                    }}
-                >
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <FormControl size="small" sx={{ minWidth: 150 }}>
-                            <InputLabel>
-                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                    <SortIcon fontSize="small" />
-                                    <span>Sort</span>
-                                </Stack>
-                            </InputLabel>
-                            <Select
-                                label="Sort"
-                                value={urlSort}
-                                onChange={handleSortChange}
-                            >
-                                <MenuItem value="">
-                                    <em>Default</em>
-                                </MenuItem>
-                                {sortOptions.map((s) => (
-                                    <MenuItem key={s.value} value={s.value}>
-                                        {s.name}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        <Box sx={{ position: "relative" }}>
-                            <Button
-                                variant={activeFilterCount > 0 ? "contained" : "outlined"}
-                                size="small"
-                                startIcon={<FilterListIcon />}
-                                onClick={() => setDrawerOpen(true)}
-                            >
-                                Filter
-                            </Button>
-
-                            {activeFilterCount > 0 && (
-                                <Chip
-                                    label={activeFilterCount}
-                                    color="primary"
-                                    size="small"
-                                    sx={{ position: "absolute", top: -8, right: -8 }}
-                                />
-                            )}
-                        </Box>
-                    </Stack>
-                </Box>
-            )}
-
             {/* MOBILE SEARCH + SORT + FILTER */}
             {isMobile && (
                 <Box sx={{ mt: 3, px: { xs: 2, sm: 3 } }}>
@@ -445,10 +387,74 @@ export const ProductList = () => {
                     </Stack>
                 ) : (
                     <>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            {urlSearch && `Search results for "${urlSearch}" - `}
-                            Showing {visibleProducts.length} of {totalResults} products
-                        </Typography>
+                        {/* TOP BAR: Showing count + Sort + Filter (DESKTOP ONLY) */}
+                        {!isMobile && !loggedInUser?.isAdmin && (
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="space-between"
+                                sx={{
+                                    mb: 2,
+                                    px: 1,
+                                }}
+                            >
+                                {/* LEFT: Showing count */}
+                                <Typography variant="body2" color="text.secondary">
+                                    {urlSearch && `Search results for "${urlSearch}" - `}
+                                    Showing {visibleProducts.length} of {totalResults} products
+                                </Typography>
+
+                                {/* RIGHT: Sort + Filter */}
+                                <Stack direction="row" spacing={2} alignItems="center">
+
+                                    {/* SORT */}
+                                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                                        <InputLabel>
+                                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                                                <SortIcon fontSize="small" />
+                                                <span>Sort</span>
+                                            </Stack>
+                                        </InputLabel>
+                                        <Select
+                                            label="Sort"
+                                            value={urlSort}
+                                            onChange={handleSortChange}
+                                        >
+                                            <MenuItem value="">
+                                                <em>Default</em>
+                                            </MenuItem>
+                                            {sortOptions.map((s) => (
+                                                <MenuItem key={s.value} value={s.value}>
+                                                    {s.name}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+
+                                    {/* FILTER */}
+                                    <Box sx={{ position: "relative" }}>
+                                        <Button
+                                            variant={activeFilterCount > 0 ? "contained" : "outlined"}
+                                            size="small"
+                                            startIcon={<FilterListIcon />}
+                                            onClick={() => setDrawerOpen(true)}
+                                        >
+                                            Filter
+                                        </Button>
+
+                                        {activeFilterCount > 0 && (
+                                            <Chip
+                                                label={activeFilterCount}
+                                                color="primary"
+                                                size="small"
+                                                sx={{ position: "absolute", top: -8, right: -8 }}
+                                            />
+                                        )}
+                                    </Box>
+
+                                </Stack>
+                            </Stack>
+                        )}
 
                         <Grid container spacing={2}>
                             {visibleProducts.map((p) => (

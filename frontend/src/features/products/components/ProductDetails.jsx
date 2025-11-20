@@ -136,7 +136,9 @@ export const ProductDetails = () => {
     // Size handling
     const showSizeSelector = product?.sizes && product.sizes.length > 0;
     const availableSizes = product?.sizes || [];
-    const isSizeRequired = product?.requiresSize === true;
+    const isSizeRequired =
+        (product?.sizes?.length > 0) || product?.requiresSize === true;
+
 
     // Toasts for cart / wishlist operations
     useOnceToast(
