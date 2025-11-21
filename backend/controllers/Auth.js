@@ -66,11 +66,13 @@ exports.signup = async (req, res) => {
         const token = generateToken(secureInfo);
 
         res.cookie("token", token, {
-            sameSite: process.env.PRODUCTION === "true" ? "None" : "Lax",
-            secure: process.env.PRODUCTION === "true",
             httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            path: "/",
             maxAge: parseInt(process.env.COOKIE_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000,
         });
+
 
         return res.status(201).json(sanitizeUser(createdUser));
     } catch (error) {
@@ -96,11 +98,13 @@ exports.login = async (req, res) => {
             const token = generateToken(secureInfo);
 
             res.cookie("token", token, {
-                sameSite: process.env.PRODUCTION === "true" ? "None" : "Lax",
-                secure: process.env.PRODUCTION === "true",
                 httpOnly: true,
+                secure: true,
+                sameSite: "None",
+                path: "/",
                 maxAge: parseInt(process.env.COOKIE_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000,
             });
+
 
             return res.status(200).json(sanitizeUser(existingUser));
         }
@@ -179,11 +183,13 @@ exports.googleLogin = async (req, res) => {
         const token = generateToken(secureInfo);
 
         res.cookie("token", token, {
-            sameSite: process.env.PRODUCTION === "true" ? "None" : "Lax",
-            secure: process.env.PRODUCTION === "true",
             httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            path: "/",
             maxAge: parseInt(process.env.COOKIE_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000,
         });
+
 
         console.log("✅ Google auth successful, sending response");
         return res.status(200).json(secureInfo);

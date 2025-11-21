@@ -24,41 +24,21 @@ const { connectToDB } = require("./database/db");
 const server = express();
 
 // database connection
-connectToDB()
+connectToDB();
 
-// ---------- CORS CONFIG ----------
-const isProduction = process.env.PRODUCTION === "true";
-
-const allowedOrigins = process.env.ORIGIN
-    ? process.env.ORIGIN.split(",").map((o) => o.trim())
-    : ["http://localhost:3000"];
-
+// ---------- CORRECT CORS CONFIG ----------
 const corsOptions = {
-    origin(origin, callback) {
-        // No origin → allow (Postman, curl, mobile apps, etc.)
-        if (!origin) {
-            return callback(null, true);
-        }
-
-        // DEV MODE: allow everything (use this on your laptop)
-        if (!isProduction) {
-            return callback(null, true);
-        }
-
-        // PROD MODE: strict allow-list
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        return callback(new Error(`Not allowed by CORS: ${origin}`));
-    },
-    credentials: true, // allow cookies
-    exposedHeaders: ["X-Total-Count"],
+    origin: [
+        "https://zaraboutiques.onrender.com",
+        "http://localhost:3000"
+    ],
+    credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
 };
 
+server.use(cors(corsOptions));   // USE ONLY ONCE
+
 // ---------- MIDDLEWARES ----------
-server.use(cors(corsOptions));
 server.use(express.json({ limit: "10mb" }));
 server.use(express.urlencoded({ extended: true, limit: "10mb" }));
 server.use(cookieParser());
@@ -76,7 +56,7 @@ server.use("/address", addressRoutes);
 server.use("/reviews", reviewRoutes);
 server.use("/wishlist", wishlistRoutes);
 server.use("/otp", otpRoutes);
-server.use(googleAuthRoutes)
+server.use(googleAuthRoutes);
 
 server.get("/", (req, res) => {
     res.status(200).json({ message: "Server running" });
@@ -87,7 +67,5 @@ const PORT = process.env.PORT || 8000;
 // Bind to 0.0.0.0 so LAN devices can hit it
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server [STARTED] ~ http://localhost:${PORT}`);
-    console.log(
-        `Network access available at PORT:${PORT}`
-    );
+    console.log(`Network access available at PORT:${PORT}`);
 });
