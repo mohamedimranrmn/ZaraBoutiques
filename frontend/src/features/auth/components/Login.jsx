@@ -14,16 +14,18 @@ import { useForm } from 'react-hook-form';
 import { ecommerceOutlookAnimation } from '../../../assets';
 import { useDispatch, useSelector } from 'react-redux';
 import { LoadingButton } from '@mui/lab';
+import { GoogleLogin } from "@react-oauth/google";
+import { toast } from 'react-toastify';
+import { MotionConfig, motion } from 'framer-motion';
 import {
     selectLoggedInUser,
     loginAsync,
+    googleLoginAsync,
     selectLoginStatus,
     selectLoginError,
     clearLoginError,
     resetLoginStatus
 } from '../AuthSlice';
-import { toast } from 'react-toastify';
-import { MotionConfig, motion } from 'framer-motion';
 
 export const Login = () => {
     const dispatch = useDispatch();
@@ -39,7 +41,7 @@ export const Login = () => {
     useEffect(() => {
         if (loggedInUser && loggedInUser?.isVerified) navigate('/');
         else if (loggedInUser && !loggedInUser?.isVerified) navigate('/verify-otp');
-    }, [loggedInUser]);
+    }, [loggedInUser, navigate]);
 
     useEffect(() => {
         if (error) toast.error(error.message);
@@ -54,12 +56,32 @@ export const Login = () => {
             dispatch(clearLoginError());
             dispatch(resetLoginStatus());
         };
-    }, [status]);
+    }, [status, loggedInUser, dispatch, reset]);
 
     const handleLogin = (data) => {
         const cred = { ...data };
         delete cred.confirmPassword;
         dispatch(loginAsync(cred));
+    };
+
+    const handleGoogleLogin = async (credentialResponse) => {
+        const credential = credentialResponse.credential;
+        if (!credential) {
+            toast.error("Google login failed");
+            return;
+        }
+        try {
+            const resultAction = await dispatch(googleLoginAsync(credential));
+            if (googleLoginAsync.fulfilled.match(resultAction)) {
+                console.log("✅ Google login successful");
+            } else {
+                const errorMsg = resultAction.payload?.message || "Google authentication failed";
+                toast.error(errorMsg);
+            }
+        } catch (err) {
+            console.error("Google login error:", err);
+            toast.error("An unexpected error occurred");
+        }
     };
 
     return (
@@ -179,49 +201,103 @@ export const Login = () => {
                         )}
                     </motion.div>
 
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 1 }}>
-                        <LoadingButton
-                            fullWidth
-                            sx={{
-                                height: '2.5rem',
-                                backgroundColor: '#DB4444',
-                                '&:hover': { backgroundColor: '#b73535' },
-                            }}
-                            loading={status === 'pending'}
-                            type='submit'
-                            variant='contained'
+                    {/* Login Buttons - Side by Side */}
+                    <Stack direction="row" spacing={2} alignItems="center">
+                        {/* Email Login Button */}
+                        <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 1 }}
+                            style={{ flex: 1 }}
                         >
-                            Login
-                        </LoadingButton>
-                    </motion.div>
+                            <LoadingButton
+                                fullWidth
+                                sx={{
+                                    height: '2.5rem',
+                                    backgroundColor: '#DB4444',
+                                    '&:hover': { backgroundColor: '#b73535' },
+                                }}
+                                loading={status === 'pending'}
+                                type='submit'
+                                variant='contained'
+                            >
+                                Login
+                            </LoadingButton>
+                        </motion.div>
+
+                        {/* Google Login Button */}
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <Box
+                                onClick={() => {
+                                    document.querySelector('[role="button"]')?.click();
+                                }}
+                                sx={{
+                                    border: "2px solid",
+                                    borderColor: "divider",
+                                    borderRadius: "10px",
+                                    height: "2.5rem",
+                                    width: "10.0rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: "pointer",
+                                    bgcolor: "background.paper",
+                                    transition: "all 0.2s",
+                                    "&:hover": {
+                                        bgcolor: "action.hover",
+                                        borderColor: "#4285f4"
+                                    }
+                                }}
+                            >
+                                <Box
+                                    component="img"
+                                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                    alt="Google"
+                                    sx={{ width: 25, height: 25 }}
+                                />
+                            </Box>
+                        </motion.div>
+
+                        {/* Hidden Google button */}
+                        <Box sx={{ display: "none" }}>
+                            <GoogleLogin
+                                onSuccess={handleGoogleLogin}
+                                onError={() => toast.error("Google Login Failed")}
+                            />
+                        </Box>
+                    </Stack>
 
                     {/* Links Section */}
+                    {/* Links Section */}
                     <Stack
-                        flexDirection={'row'}
-                        justifyContent={'space-between'}
-                        alignItems={'center'}
-                        flexWrap={'wrap-reverse'}
+                        mt={1}
+                        width="100%"
+                        alignItems="flex-start"
                     >
-                        <MotionConfig whileHover={{ x: 2 }} whileTap={{ scale: 1.05 }}>
-                            <motion.div>
-                                <Typography
-                                    mr={'1.5rem'}
-                                    sx={{ textDecoration: 'none', color: 'text.warning' }}
-                                    to={'/forgot-password'}
-                                    component={Link}
-                                >
-                                    Forgot password
-                                </Typography>
-                            </motion.div>
 
+                        {/* Already a member */}
+                        <MotionConfig whileHover={{ x: 2 }} whileTap={{ scale: 1.05 }}>
                             <motion.div>
                                 <Typography
                                     sx={{ textDecoration: 'none', color: 'text.primary' }}
                                     to={'/signup'}
                                     component={Link}
                                 >
-                                    Don't have an account?{' '}
+                                    Don’t have an account?{' '}
                                     <span style={{ color: theme.palette.primary.dark }}>Register</span>
+                                </Typography>
+                            </motion.div>
+
+                            {/* Forgot Password BELOW */}
+                            <motion.div style={{ marginTop: '0.5rem' }}>
+                                <Typography
+                                    sx={{ textDecoration: 'none', color: 'text.warning' }}
+                                    to={'/forgot-password'}
+                                    component={Link}
+                                >
+                                    Forgot password?
                                 </Typography>
                             </motion.div>
                         </MotionConfig>

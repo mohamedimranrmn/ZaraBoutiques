@@ -6,6 +6,9 @@ const Otp = require("../models/OTP");
 const { sanitizeUser } = require("../utils/SanitizeUser");
 const { generateToken } = require("../utils/GenerateToken");
 const PasswordResetToken = require("../models/PasswordResetToken");
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /* ============================================================
    HELPER → Determine correct frontend URL
@@ -37,6 +40,28 @@ exports.signup = async (req, res) => {
         const createdUser = new User(req.body);
         await createdUser.save();
 
+        // Generate and send OTP
+        const otp = generateOTP();
+        const hashedOtp = await bcrypt.hash(otp, 10);
+
+        const newOtp = new Otp({
+            user: createdUser._id,
+            otp: hashedOtp,
+            expiresAt: Date.now() + parseInt(process.env.OTP_EXPIRATION_TIME) * 1000,
+        });
+
+        await newOtp.save();
+
+        await sendMail(
+            createdUser.email,
+            `Zara Boutiques — Email Verification`,
+            `
+            <h3>Welcome to Zara Boutiques!</h3>
+            <p>Your OTP for email verification is: <strong>${otp}</strong></p>
+            <p>This OTP expires in 2 minutes.</p>
+            `
+        );
+
         const secureInfo = sanitizeUser(createdUser);
         const token = generateToken(secureInfo);
 
@@ -44,17 +69,12 @@ exports.signup = async (req, res) => {
             sameSite: process.env.PRODUCTION === "true" ? "None" : "Lax",
             secure: process.env.PRODUCTION === "true",
             httpOnly: true,
-            maxAge:
-                parseInt(process.env.COOKIE_EXPIRATION_DAYS) *
-                24 *
-                60 *
-                60 *
-                1000,
+            maxAge: parseInt(process.env.COOKIE_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000,
         });
 
         return res.status(201).json(sanitizeUser(createdUser));
     } catch (error) {
-        console.log(error);
+        console.log("Signup error:", error);
         return res.status(500).json({
             message: "Error occurred during signup, please try again later",
         });
@@ -79,12 +99,7 @@ exports.login = async (req, res) => {
                 sameSite: process.env.PRODUCTION === "true" ? "None" : "Lax",
                 secure: process.env.PRODUCTION === "true",
                 httpOnly: true,
-                maxAge:
-                    parseInt(process.env.COOKIE_EXPIRATION_DAYS) *
-                    24 *
-                    60 *
-                    60 *
-                    1000,
+                maxAge: parseInt(process.env.COOKIE_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000,
             });
 
             return res.status(200).json(sanitizeUser(existingUser));
@@ -93,9 +108,90 @@ exports.login = async (req, res) => {
         res.clearCookie("token");
         return res.status(404).json({ message: "Invalid credentials" });
     } catch (error) {
-        console.log(error);
+        console.log("Login error:", error);
         return res.status(500).json({
             message: "Some error occurred while logging in, please try again later",
+        });
+    }
+};
+
+/* ============================================================
+   GOOGLE LOGIN/SIGNUP
+   ============================================================ */
+exports.googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+
+        console.log("🔐 Google Login/Signup Attempt");
+
+        if (!credential) {
+            return res.status(400).json({ message: "No credential provided" });
+        }
+
+        // Verify the Google token
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, name, email_verified } = payload;
+
+        console.log("✅ Token verified for:", email);
+
+        if (!email_verified) {
+            return res.status(400).json({ message: "Email not verified by Google" });
+        }
+
+        // Find or create user
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            console.log("👤 Creating new Google user");
+
+            // Generate a random secure password for Google users
+            // They won't use it since they login via Google
+            const randomPassword = await bcrypt.hash(
+                Math.random().toString(36) + Date.now().toString(36),
+                10
+            );
+
+            user = await User.create({
+                name,
+                email,
+                password: randomPassword, // Dummy password for Google users
+                googleId,
+                isVerified: true, // Google accounts are pre-verified
+                isAdmin: false,
+            });
+        } else {
+            console.log("👤 Existing user found");
+            // Update existing user with Google ID if missing
+            if (!user.googleId) {
+                user.googleId = googleId;
+                user.isVerified = true; // Mark as verified since Google verified it
+                await user.save();
+            }
+        }
+
+        // Generate JWT token
+        const secureInfo = sanitizeUser(user);
+        const token = generateToken(secureInfo);
+
+        res.cookie("token", token, {
+            sameSite: process.env.PRODUCTION === "true" ? "None" : "Lax",
+            secure: process.env.PRODUCTION === "true",
+            httpOnly: true,
+            maxAge: parseInt(process.env.COOKIE_EXPIRATION_DAYS) * 24 * 60 * 60 * 1000,
+        });
+
+        console.log("✅ Google auth successful, sending response");
+        return res.status(200).json(secureInfo);
+
+    } catch (error) {
+        console.error("❌ Google login error:", error);
+        return res.status(500).json({
+            message: error.message || "Google authentication failed"
         });
     }
 };
@@ -134,7 +230,7 @@ exports.verifyOtp = async (req, res) => {
 
         return res.status(400).json({ message: "OTP is invalid or expired" });
     } catch (error) {
-        console.log(error);
+        console.log("Verify OTP error:", error);
         return res.status(500).json({ message: "Some error occurred" });
     }
 };
@@ -157,9 +253,7 @@ exports.resendOtp = async (req, res) => {
         const newOtp = new Otp({
             user: req.body.user,
             otp: hashedOtp,
-            expiresAt:
-                Date.now() +
-                parseInt(process.env.OTP_EXPIRATION_TIME) * 1000,
+            expiresAt: Date.now() + parseInt(process.env.OTP_EXPIRATION_TIME) * 1000,
         });
 
         await newOtp.save();
@@ -175,7 +269,7 @@ exports.resendOtp = async (req, res) => {
 
         return res.status(201).json({ message: "OTP sent successfully" });
     } catch (error) {
-        console.log(error);
+        console.log("Resend OTP error:", error);
         return res.status(500).json({
             message: "Some error occurred while resending OTP, please try again later",
         });
@@ -202,9 +296,7 @@ exports.forgotPassword = async (req, res) => {
         newToken = new PasswordResetToken({
             user: isExistingUser._id,
             token: hashedToken,
-            expiresAt:
-                Date.now() +
-                parseInt(process.env.OTP_EXPIRATION_TIME) * 1000,
+            expiresAt: Date.now() + parseInt(process.env.OTP_EXPIRATION_TIME) * 1000,
         });
 
         await newToken.save();
@@ -222,7 +314,7 @@ exports.forgotPassword = async (req, res) => {
             message: `Password reset link sent to ${isExistingUser.email}`,
         });
     } catch (error) {
-        console.log(error);
+        console.log("Forgot password error:", error);
         return res.status(500).json({
             message: "Error occurred while sending password reset email",
         });
@@ -268,10 +360,9 @@ exports.resetPassword = async (req, res) => {
 
         return res.status(404).json({ message: "Reset link has expired" });
     } catch (error) {
-        console.log(error);
+        console.log("Reset password error:", error);
         return res.status(500).json({
-            message:
-                "Error occurred while resetting the password, please try again later",
+            message: "Error occurred while resetting the password, please try again later",
         });
     }
 };
@@ -288,7 +379,8 @@ exports.logout = async (req, res) => {
         });
         return res.status(200).json({ message: "Logout successful" });
     } catch (error) {
-        console.log(error);
+        console.log("Logout error:", error);
+        return res.status(500).json({ message: "Error during logout" });
     }
 };
 
@@ -302,7 +394,7 @@ exports.checkAuth = async (req, res) => {
         const user = await User.findById(req.user._id);
         return res.status(200).json(sanitizeUser(user));
     } catch (error) {
-        console.log(error);
+        console.log("Check auth error:", error);
         return res.sendStatus(500);
     }
 };

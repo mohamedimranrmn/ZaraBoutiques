@@ -16,6 +16,7 @@ const addressRoutes = require("./routes/Address");
 const reviewRoutes = require("./routes/Review");
 const wishlistRoutes = require("./routes/Wishlist");
 const otpRoutes = require("./routes/Otp");
+const googleAuthRoutes = require("./routes/googleAuth");
 
 const { connectToDB } = require("./database/db");
 
@@ -75,6 +76,7 @@ server.use("/address", addressRoutes);
 server.use("/reviews", reviewRoutes);
 server.use("/wishlist", wishlistRoutes);
 server.use("/otp", otpRoutes);
+server.use(googleAuthRoutes)
 
 server.get("/", (req, res) => {
     res.status(200).json({ message: "Server running" });
