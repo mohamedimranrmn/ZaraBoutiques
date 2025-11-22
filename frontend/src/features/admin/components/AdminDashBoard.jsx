@@ -29,6 +29,8 @@ import {
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import AddIcon from '@mui/icons-material/Add'
+import HomeIcon from '@mui/icons-material/Home';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import {
     deleteProductByIdAsync,
     fetchProductsAsync,
@@ -745,105 +747,109 @@ export const AdminDashBoard = () => {
                                                         </Alert>
                                                     )}
                                                 </CardContent>
-
-                                                <CardActions sx={{ p: { xs: 1.5, sm: 2 }, pt: 0 }}>
-                                                    <Stack direction="row" spacing={1} width="100%">
+                                                <CardActions sx={{ p: { xs: 1, sm: 2 }, pt: 0 }}>
+                                                    <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} width="100%">
+                                                        {/* Edit Button */}
                                                         <Button
                                                             component={Link}
                                                             to={`/admin/product-update/${product._id}`}
                                                             variant="outlined"
                                                             size="small"
-                                                            startIcon={
-                                                                !isMobile && <EditIcon sx={{ fontSize: 18 }} />
-                                                            }
-                                                            fullWidth={!product.isDeleted || !isMobile}
                                                             sx={{
                                                                 textTransform: 'none',
                                                                 fontWeight: 500,
-                                                                borderRadius: 1.5,
-                                                                fontSize: {
-                                                                    xs: '0.7rem',
-                                                                    sm: '0.8rem'
-                                                                },
+                                                                borderRadius: 100,
+                                                                fontSize: { xs: '0.65rem', sm: '0.8rem' },
                                                                 py: { xs: 0.5, sm: 0.75 },
-                                                                minWidth: product.isDeleted && isMobile ? '40px' : 'auto',
-                                                                px: product.isDeleted && isMobile ? 1 : { xs: 2, sm: 2 }
+                                                                px: { xs: 0.5, sm: 1.5 },
+                                                                minWidth: { xs: '32px', sm: 'auto' },
+                                                                flex: product.isDeleted ? 0 : 1,
                                                             }}
                                                         >
-                                                            {product.isDeleted && isMobile ? <EditIcon sx={{ fontSize: 18 }} /> : 'Edit'}
+                                                            {isMobile ? <EditIcon sx={{ fontSize: 16 }} /> : (
+                                                                <>
+                                                                    <EditIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                                                                    Edit
+                                                                </>
+                                                            )}
                                                         </Button>
 
                                                         {product.isDeleted ? (
                                                             <>
+                                                                {/* Restore Button - Circle Icon (Mobile), Normal on Desktop */}
                                                                 <Button
                                                                     onClick={() => handleProductUnDelete(product._id)}
                                                                     variant="outlined"
                                                                     color="success"
                                                                     size="small"
-                                                                    startIcon={
-                                                                        !isMobile && <RestoreIcon sx={{ fontSize: 18 }} />
-                                                                    }
                                                                     sx={{
                                                                         textTransform: 'none',
                                                                         fontWeight: 500,
-                                                                        borderRadius: 1.5,
-                                                                        fontSize: {
-                                                                            xs: '0.7rem',
-                                                                            sm: '0.8rem'
-                                                                        },
-                                                                        py: { xs: 0.5, sm: 0.75 },
-                                                                        minWidth: { xs: '70px', sm: 'auto' }
+                                                                        fontSize: { xs: '0rem', sm: '0.8rem' },
+                                                                        borderRadius: { xs: '50%', sm: 1.5 },
+                                                                        minWidth: { xs: '34px', sm: 'auto' },
+                                                                        width: { xs: 34, sm: 'auto' },
+                                                                        height: { xs: 34, sm: 'auto' },
+                                                                        p: { xs: 0, sm: '6px 12px' },
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        flex: 0,
                                                                     }}
                                                                 >
-                                                                    {isMobile ? <RestoreIcon sx={{ fontSize: 18 }} /> : 'Restore'}
+                                                                    <RestoreIcon sx={{ fontSize: { xs: 18, sm: 16 }, mr: { sm: 0.5 } }} />
+                                                                    {!isMobile && "Restore"}
                                                                 </Button>
+
+                                                                {/* Force Delete Button - Circle Icon on Mobile */}
                                                                 <Button
                                                                     onClick={() => handleForceDelete(product)}
                                                                     variant="outlined"
                                                                     color="error"
                                                                     size="small"
-                                                                    startIcon={
-                                                                        !isMobile && <DeleteForeverIcon sx={{ fontSize: 18 }} />
-                                                                    }
                                                                     sx={{
                                                                         textTransform: 'none',
                                                                         fontWeight: 500,
-                                                                        borderRadius: 1.5,
-                                                                        fontSize: {
-                                                                            xs: '0.7rem',
-                                                                            sm: '0.8rem'
-                                                                        },
-                                                                        py: { xs: 0.5, sm: 0.75 },
-                                                                        minWidth: { xs: '40px', sm: 'auto' },
-                                                                        px: { xs: 1, sm: 2 }
+                                                                        fontSize: { xs: '0rem', sm: '0.8rem' },
+                                                                        borderRadius: { xs: '50%', sm: 1.5 },
+                                                                        minWidth: { xs: '34px', sm: 'auto' },
+                                                                        width: { xs: 34, sm: 'auto' },
+                                                                        height: { xs: 34, sm: 'auto' },
+                                                                        p: { xs: 0, sm: '6px 12px' },
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        flex: 0,
                                                                     }}
                                                                 >
-                                                                    {isMobile ? <DeleteForeverIcon sx={{ fontSize: 18 }} /> : 'Delete'}
+                                                                    <DeleteForeverIcon sx={{ fontSize: { xs: 18, sm: 16 }, mr: { sm: 0.5 } }} />
+                                                                    {!isMobile && "Delete"}
                                                                 </Button>
                                                             </>
                                                         ) : (
+                                                            /* Delete Button */
                                                             <Button
                                                                 onClick={() => handleProductDelete(product)}
                                                                 variant="outlined"
                                                                 color="error"
                                                                 size="small"
-                                                                startIcon={
-                                                                    !isMobile && <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                                                                }
                                                                 sx={{
                                                                     textTransform: 'none',
                                                                     fontWeight: 500,
                                                                     borderRadius: 1.5,
-                                                                    fontSize: {
-                                                                        xs: '0.7rem',
-                                                                        sm: '0.8rem'
-                                                                    },
+                                                                    fontSize: { xs: '0.65rem', sm: '0.8rem' },
                                                                     py: { xs: 0.5, sm: 0.75 },
-                                                                    minWidth: { xs: '40px', sm: 'auto' },
-                                                                    px: { xs: 1, sm: 2 }
+                                                                    px: { xs: 0.5, sm: 1.5 },
+                                                                    minWidth: { xs: '32px', sm: 'auto' },
+                                                                    flex: 0,
                                                                 }}
                                                             >
-                                                                {isMobile ? <DeleteOutlineIcon sx={{ fontSize: 18 }} /> : 'Delete'}
+                                                                {isMobile ? <DeleteOutlineIcon sx={{ fontSize: 16 }} /> : (
+                                                                    <>
+                                                                        <DeleteOutlineIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                                                                        Delete
+                                                                    </>
+                                                                )}
                                                             </Button>
                                                         )}
                                                     </Stack>
@@ -1023,44 +1029,131 @@ export const AdminDashBoard = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Mobile FAB */}
-            // Find and replace the Mobile FAB section at the bottom of the file with this:
-
-            {/* Mobile FAB - Centered Bottom */}
+            {/* Mobile Bottom Navigation Bar */}
             {isMobile && (
                 <Box
                     sx={{
-                        position: 'fixed',
+                        position: "fixed",
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        pb: 2,
-                        pt: 1,
-                        background: 'linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 50%, transparent 100%)',
-                        pointerEvents: 'none',
-                        zIndex: 1000
+                        zIndex: 1000,
+                        pointerEvents: "none",
                     }}
                 >
-                    <Fab
-                        color="primary"
-                        component={Link}
-                        to="/admin/add-product"
+                    {/* Blurred Translucent Bottom Bar */}
+                    <Box
                         sx={{
-                            width: 56,
+                            position: "absolute",
+                            bottom: 0,
+                            width: "100%",
                             height: 56,
-                            pointerEvents: 'auto',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                            '&:hover': {
-                                transform: 'scale(1.1)',
-                                boxShadow: '0 6px 24px rgba(0,0,0,0.3)'
-                            },
-                            transition: 'all 0.3s ease'
+                            bgcolor: "rgba(255, 255, 255, 0.7)",
+                            backdropFilter: "blur(20px)",
+                            WebkitBackdropFilter: "blur(20px)",
+                            boxShadow: "0 -1px 20px rgba(0,0,0,0.08)",
+                            borderTopLeftRadius: 20,
+                            borderTopRightRadius: 20,
+                            overflow: "hidden",
                         }}
                     >
-                        <AddIcon sx={{ fontSize: 28 }} />
-                    </Fab>
+                        {/* Blurred Curved cutout */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: -28,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: 75,
+                                height: 75,
+                                bgcolor: "rgba(255, 255, 255, 0.7)",
+                                backdropFilter: "blur(20px)",
+                                WebkitBackdropFilter: "blur(20px)",
+                                borderRadius: "50%",
+                                boxShadow: "0 -2px 15px rgba(0,0,0,0.08)",
+                            }}
+                        />
+                    </Box>
+
+                    {/* Navigation Items Container */}
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            width: "100%",
+                            height: 56,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-around",
+                            px: 3,
+                            pointerEvents: "auto",
+                        }}
+                    >
+                        {/* Home Button */}
+                        <IconButton
+                            component={Link}
+                            to="/admin/dashboard"
+                            sx={{
+                                color: "#666",
+                                "&:hover": {
+                                    color: "#000",
+                                    bgcolor: "rgba(0,0,0,0.05)",
+                                },
+                                transition: "all 0.2s ease",
+                            }}
+                        >
+                            <HomeIcon sx={{ fontSize: 24 }} />
+                        </IconButton>
+
+                        {/* Spacer for center FAB */}
+                        <Box sx={{ width: 56 }} />
+
+                        {/* Orders Button */}
+                        <IconButton
+                            component={Link}
+                            to="/admin/orders"
+                            sx={{
+                                color: "#666",
+                                "&:hover": {
+                                    color: "#000",
+                                    bgcolor: "rgba(0,0,0,0.05)",
+                                },
+                                transition: "all 0.2s ease",
+                            }}
+                        >
+                            <ReceiptLongIcon sx={{ fontSize: 24 }} />
+                        </IconButton>
+                    </Box>
+
+                    {/* Black Floating FAB with White Plus (Center) */}
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            left: "50%",
+                            bottom: 18,
+                            transform: "translateX(-50%)",
+                            pointerEvents: "auto",
+                        }}
+                    >
+                        <Fab
+                            component={Link}
+                            to="/admin/add-product"
+                            sx={{
+                                width: 56,
+                                height: 56,
+                                bgcolor: "#000000",
+                                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
+                                "&:hover": {
+                                    bgcolor: "#1a1a1a",
+                                    transform: "scale(1.08) translateY(-2px)",
+                                    boxShadow: "0 12px 28px rgba(0, 0, 0, 0.4)",
+                                },
+                                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                        >
+                            <AddIcon sx={{ fontSize: 28, color: "#ffffff" }} />
+                        </Fab>
+                    </Box>
                 </Box>
             )}
         </>

@@ -201,7 +201,7 @@ export const Login = () => {
                         )}
                     </motion.div>
 
-                    {/* Login Buttons - Side by Side */}
+                    {/* Login Buttons - Equal Size Side by Side */}
                     <Stack direction="row" spacing={2} alignItems="center">
                         {/* Email Login Button */}
                         <motion.div
@@ -212,7 +212,7 @@ export const Login = () => {
                             <LoadingButton
                                 fullWidth
                                 sx={{
-                                    height: '2.5rem',
+                                    height: '2.8rem',
                                     backgroundColor: '#DB4444',
                                     '&:hover': { backgroundColor: '#b73535' },
                                 }}
@@ -226,8 +226,9 @@ export const Login = () => {
 
                         {/* Google Login Button */}
                         <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 1 }}
+                            style={{ flex: 1 }}
                         >
                             <Box
                                 onClick={() => {
@@ -236,12 +237,13 @@ export const Login = () => {
                                 sx={{
                                     border: "2px solid",
                                     borderColor: "divider",
-                                    borderRadius: "10px",
-                                    height: "2.5rem",
-                                    width: "10.0rem",
+                                    borderRadius: "4px",
+                                    height: "2.8rem",
+                                    width: "100%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
+                                    gap: 1,
                                     cursor: "pointer",
                                     bgcolor: "background.paper",
                                     transition: "all 0.2s",
@@ -255,8 +257,11 @@ export const Login = () => {
                                     component="img"
                                     src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                                     alt="Google"
-                                    sx={{ width: 25, height: 25 }}
+                                    sx={{ width: 20, height: 20 }}
                                 />
+                                <Typography variant="body1" fontWeight={500}>
+                                    Google
+                                </Typography>
                             </Box>
                         </motion.div>
 
@@ -269,7 +274,6 @@ export const Login = () => {
                         </Box>
                     </Stack>
 
-                    {/* Links Section */}
                     {/* Links Section */}
                     <Stack
                         mt={1}
@@ -285,7 +289,7 @@ export const Login = () => {
                                     to={'/signup'}
                                     component={Link}
                                 >
-                                    Don’t have an account?{' '}
+                                    Don't have an account?{' '}
                                     <span style={{ color: theme.palette.primary.dark }}>Register</span>
                                 </Typography>
                             </motion.div>

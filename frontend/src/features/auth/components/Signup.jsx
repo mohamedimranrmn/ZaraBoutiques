@@ -226,7 +226,7 @@ export const Signup = () => {
                         </motion.div>
                     </MotionConfig>
 
-                    {/* Signup Buttons - Side by Side */}
+                    {/* Signup Buttons - Equal Size Side by Side */}
                     <Stack direction="row" spacing={2} alignItems="center">
                         {/* Email Signup Button */}
                         <motion.div
@@ -236,7 +236,7 @@ export const Signup = () => {
                         >
                             <LoadingButton
                                 sx={{
-                                    height: '2.5rem',
+                                    height: '2.8rem',
                                     whiteSpace: 'nowrap',
                                     backgroundColor: '#DB4444',
                                     '&:hover': { backgroundColor: '#b73535' }
@@ -252,22 +252,24 @@ export const Signup = () => {
 
                         {/* Google Signup Button */}
                         <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 1 }}
+                            style={{ flex: 1 }}
                         >
                             <Box
                                 onClick={() => {
                                     document.querySelector('[role="button"]')?.click();
                                 }}
                                 sx={{
-                                    border: "1px solid",
+                                    border: "2px solid",
                                     borderColor: "divider",
-                                    borderRadius: "10px",
-                                    height: "2.5rem",
-                                    width: "10.0rem",
+                                    borderRadius: "4px",
+                                    height: "2.8rem",
+                                    width: "100%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
+                                    gap: 1,
                                     cursor: "pointer",
                                     bgcolor: "background.paper",
                                     transition: "all 0.2s",
@@ -281,8 +283,11 @@ export const Signup = () => {
                                     component="img"
                                     src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                                     alt="Google"
-                                    sx={{ width: 25, height: 25 }}
+                                    sx={{ width: 20, height: 20 }}
                                 />
+                                <Typography variant="body1" fontWeight={500}>
+                                    Google
+                                </Typography>
                             </Box>
                         </motion.div>
 
@@ -295,7 +300,6 @@ export const Signup = () => {
                         </Box>
                     </Stack>
 
-                    {/* Footer Links */}
                     {/* Footer Links */}
                     <Stack
                         mt={1}

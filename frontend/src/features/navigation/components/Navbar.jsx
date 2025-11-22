@@ -154,32 +154,72 @@ export const Navbar = () => {
                     </Box>
                 )}
 
-                {/* -------------------------- ADMIN BUTTONS INLINE -------------------------- */}
                 {loggedInUser?.isAdmin && (
-                    <Stack direction="row" spacing={isMobile ? 0.5 : 2} sx={{ flexShrink: 0 }}>
-                        {adminItems.map((item) => (
-                            <Button
-                                key={item.label}
-                                component={Link}
-                                to={item.to}
-                                sx={{
-                                    textTransform: "none",
-                                    fontSize: isMobile ? ".65rem" : ".85rem",
-                                    fontWeight: 600,
-                                    borderRadius: isMobile ? 2 : 4,
-                                    px: isMobile ? 1 : 2,
-                                    py: isMobile ? 0.5 : 1,
-                                    minWidth: isMobile ? 'auto' : 'auto',
-                                    color: item.label === "Logout" ? "#E53935" : "#333",
-                                    background: "#f7f7f7",
-                                    "&:hover": {
-                                        background: "#ececec",
-                                    },
-                                }}
-                            >
-                                {item.label}
-                            </Button>
-                        ))}
+                    <Stack
+                        direction="row"
+                        spacing={isMobile ? 1 : 2}
+                        sx={{ flexShrink: 0, alignItems: "center" }}
+                    >
+                        {isMobile ? (
+                            // Mobile: Show welcome message + logout only
+                            <>
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.75rem",
+                                        fontWeight: 600,
+                                        color: "#666",
+                                        whiteSpace: "nowrap",
+                                    }}
+                                >
+                                    Welcome, Admin
+                                </Typography>
+                                <Button
+                                    component={Link}
+                                    to="/logout"
+                                    sx={{
+                                        textTransform: "none",
+                                        fontSize: ".7rem",
+                                        fontWeight: 600,
+                                        borderRadius: 2,
+                                        px: 1.5,
+                                        py: 0.5,
+                                        minWidth: 'auto',
+                                        color: "#E53935",
+                                        background: "#f7f7f7",
+                                        "&:hover": {
+                                            background: "#ececec",
+                                        },
+                                    }}
+                                >
+                                    Logout
+                                </Button>
+                            </>
+                        ) : (
+                            // Desktop: Show all buttons
+                            adminItems.map((item) => (
+                                <Button
+                                    key={item.label}
+                                    component={Link}
+                                    to={item.to}
+                                    sx={{
+                                        textTransform: "none",
+                                        fontSize: ".85rem",
+                                        fontWeight: 600,
+                                        borderRadius: 4,
+                                        px: 2,
+                                        py: 1,
+                                        minWidth: 'auto',
+                                        color: item.label === "Logout" ? "#E53935" : "#333",
+                                        background: "#f7f7f7",
+                                        "&:hover": {
+                                            background: "#ececec",
+                                        },
+                                    }}
+                                >
+                                    {item.label}
+                                </Button>
+                            ))
+                        )}
                     </Stack>
                 )}
 

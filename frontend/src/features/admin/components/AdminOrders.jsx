@@ -47,6 +47,10 @@ import PendingIcon from '@mui/icons-material/Pending';
 import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
 import { Link } from 'react-router-dom';
+import HomeIcon from '@mui/icons-material/Home';
+import AddIcon from '@mui/icons-material/Add';
+import Fab from '@mui/material/Fab';
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
 const statusColors = {
   'Pending': 'warning',
@@ -450,7 +454,7 @@ export const AdminOrders = () => {
   };
 
   return (
-      <Container maxWidth="xl" sx={{ py: 4, mb: 8 }}>
+      <Container maxWidth="xl" sx={{ py: 4, mb: isMobile ? 10 : 4 }}>
         {/* Header */}
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
           <IconButton
@@ -743,8 +747,131 @@ export const AdminOrders = () => {
               </Button>
             </Box>
         )}
-
         <OrderDetailsDialog />
+        {isMobile && (
+            <Box
+                sx={{
+                  position: "fixed",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  pointerEvents: "none",
+                }}
+            >
+              {/* Blurred Translucent Bottom Bar */}
+              <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 0,
+                    width: "100%",
+                    height: 56,
+                    bgcolor: "rgba(255, 255, 255, 0.7)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    boxShadow: "0 -1px 20px rgba(0,0,0,0.08)",
+                    borderTopLeftRadius: 20,
+                    borderTopRightRadius: 20,
+                    overflow: "hidden",
+                  }}
+              >
+                {/* Blurred Curved cutout */}
+                <Box
+                    sx={{
+                      position: "absolute",
+                      top: -28,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      width: 75,
+                      height: 75,
+                      bgcolor: "rgba(255, 255, 255, 0.7)",
+                      backdropFilter: "blur(20px)",
+                      WebkitBackdropFilter: "blur(20px)",
+                      borderRadius: "50%",
+                      boxShadow: "0 -2px 15px rgba(0,0,0,0.08)",
+                    }}
+                />
+              </Box>
+
+              {/* Navigation Items Container */}
+              <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 0,
+                    width: "100%",
+                    height: 56,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-around",
+                    px: 3,
+                    pointerEvents: "auto",
+                  }}
+              >
+                {/* Home Button */}
+                <IconButton
+                    component={Link}
+                    to="/admin/dashboard"
+                    sx={{
+                      color: "#666",
+                      "&:hover": {
+                        color: "#000",
+                        bgcolor: "rgba(0,0,0,0.05)",
+                      },
+                      transition: "all 0.2s ease",
+                    }}
+                >
+                  <HomeIcon sx={{ fontSize: 24 }} />
+                </IconButton>
+
+                {/* Spacer for center FAB */}
+                <Box sx={{ width: 56 }} />
+
+                {/* Orders Button - Active State */}
+                <IconButton
+                    sx={{
+                      color: "#000",
+                      bgcolor: "rgba(0,0,0,0.08)",
+                      "&:hover": {
+                        bgcolor: "rgba(0,0,0,0.12)",
+                      },
+                      transition: "all 0.2s ease",
+                    }}
+                >
+                  <ReceiptLongIcon sx={{ fontSize: 24 }} />
+                </IconButton>
+              </Box>
+
+              {/* Black Floating FAB with Plus (Center) */}
+              <Box
+                  sx={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: 18,
+                    transform: "translateX(-50%)",
+                    pointerEvents: "auto",
+                  }}
+              >
+                <Fab
+                    component={Link}
+                    to="/admin/add-product"
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      bgcolor: "#000000",
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
+                      "&:hover": {
+                        bgcolor: "#1a1a1a",
+                        transform: "scale(1.08) translateY(-2px)",
+                        boxShadow: "0 12px 28px rgba(0, 0, 0, 0.4)",
+                      },
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    }}
+                >
+                  <AddIcon sx={{ fontSize: 28, color: "#ffffff" }} />
+                </Fab>
+              </Box>
+            </Box>
+        )}
       </Container>
   );
 };

@@ -22,6 +22,11 @@ import {
     Typography,
     IconButton,
     Chip,
+    Paper,
+    Divider,
+    useMediaQuery,
+    useTheme,
+    Fab,
 } from "@mui/material";
 
 import { useForm, Controller } from "react-hook-form";
@@ -34,6 +39,10 @@ import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import ClearIcon from "@mui/icons-material/Clear";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SaveIcon from "@mui/icons-material/Save";
+import HomeIcon from '@mui/icons-material/Home';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import AddIcon from '@mui/icons-material/Add';
 
 export const AddProduct = () => {
     const {
@@ -47,6 +56,8 @@ export const AddProduct = () => {
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const brands = useSelector(selectBrands);
     const categories = useSelector(selectCategories);
@@ -60,17 +71,12 @@ export const AddProduct = () => {
 
     const selectedCategory = watch("category");
 
-    /* ---------------------------------------------------------------------
-       AUTO SIZE LOGIC
-    --------------------------------------------------------------------- */
     const sizeOptions = {
         clothing: ["XS", "S", "M", "L", "XL", "XXL", "3XL"],
         footwear: ["6", "7", "8", "9", "10", "11", "12"],
         accessories: ["One Size"],
         default: [],
     };
-
-    // Update the getCategorySizes function in your AddProduct component
 
     const getCategorySizes = () => {
         if (!selectedCategory) return [];
@@ -80,15 +86,12 @@ export const AddProduct = () => {
 
         const name = category.name.toLowerCase();
 
-        // Clothing categories: tops, womens-dresses, mens-shirts
         if (name.includes("shirt") || name.includes("dress") || name === "tops")
             return sizeOptions.clothing;
 
-        // Footwear categories: womens-shoes, mens-shoes
         if (name.includes("shoes"))
             return sizeOptions.footwear;
 
-        // Accessories: bags, jewellery, watches, sunglasses
         if (name.includes("bags") || name.includes("jewellery") ||
             name.includes("watches") || name.includes("sunglasses"))
             return sizeOptions.accessories;
@@ -98,9 +101,6 @@ export const AddProduct = () => {
 
     useEffect(() => setSelectedSizes([]), [selectedCategory]);
 
-    /* ---------------------------------------------------------------------
-       SUCCESS HANDLING
-    --------------------------------------------------------------------- */
     useEffect(() => {
         if (productAddStatus === "fulfilled") {
             toast.success("Product added successfully");
@@ -114,9 +114,6 @@ export const AddProduct = () => {
         return () => dispatch(resetProductAddStatus());
     }, []);
 
-    /* ---------------------------------------------------------------------
-       HELPERS
-    --------------------------------------------------------------------- */
     const convertToBase64 = (file) =>
         new Promise((res, rej) => {
             const reader = new FileReader();
@@ -169,9 +166,6 @@ export const AddProduct = () => {
         );
     };
 
-    /* ---------------------------------------------------------------------
-       SUBMIT
-    --------------------------------------------------------------------- */
     const handleAddProduct = (data) => {
         if (!thumbnail) return toast.error("Thumbnail is required");
 
@@ -195,253 +189,453 @@ export const AddProduct = () => {
 
     const availableSizes = getCategorySizes();
 
-    /* ---------------------------------------------------------------------
-       UI — MODERN CLEAN VERSION
-    --------------------------------------------------------------------- */
     return (
-        <Box sx={{ maxWidth: "850px", mx: "auto", mt: 4, p: 2 }}>
-            {/* BACK BUTTON */}
-            <IconButton
-                component={Link}
-                to="/admin/dashboard"
+        <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh', pb: isMobile ? 12 : 4 }}>
+            {/* Header */}
+            <Box
                 sx={{
-                    mb: 2,
-                    bgcolor: "grey.100",
-                    "&:hover": { bgcolor: "grey.200" },
+                    bgcolor: 'white',
+                    borderBottom: '1px solid #e5e7eb',
+                    py: 2.5,
+                    px: { xs: 2, sm: 3, md: 4 },
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 10
                 }}
             >
-                <ArrowBackIcon />
-            </IconButton>
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ maxWidth: '1200px', mx: 'auto' }}>
+                    <IconButton
+                        component={Link}
+                        to="/admin/dashboard"
+                        sx={{
+                            bgcolor: 'grey.100',
+                            '&:hover': { bgcolor: 'grey.200' },
+                        }}
+                    >
+                        <ArrowBackIcon />
+                    </IconButton>
+                    <Box>
+                        <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={600}>
+                            Add New Product
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Fill in the product details below
+                        </Typography>
+                    </Box>
+                </Stack>
+            </Box>
 
-            <Card elevation={2} sx={{ borderRadius: 3 }}>
-                <CardContent>
-                    <Typography variant="h5" fontWeight={600} mb={3}>
-                        Add New Product
-                    </Typography>
+            {/* Content */}
+            <Box sx={{ maxWidth: "1200px", mx: "auto", px: { xs: 2, sm: 3, md: 4 }, mt: 3 }}>
+                <form onSubmit={handleSubmit(handleAddProduct)} noValidate>
+                    <Grid container spacing={3}>
+                        {/* Basic Information Card */}
+                        <Grid item xs={12}>
+                            <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+                                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                    <Typography variant="h6" fontWeight={600} mb={3}>
+                                        Basic Information
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                label="Product Title *"
+                                                fullWidth
+                                                {...register("title", { required: true })}
+                                                error={!!errors.title}
+                                                helperText={errors.title && "Title is required"}
+                                            />
+                                        </Grid>
 
-                    {/* FORM */}
-                    <form onSubmit={handleSubmit(handleAddProduct)} noValidate>
-                        <Grid container spacing={3}>
-                            {/* TITLE */}
+                                        <Grid item xs={12} sm={6}>
+                                            <FormControl fullWidth error={!!errors.brand}>
+                                                <InputLabel>Brand *</InputLabel>
+                                                <Select label="Brand" {...register("brand", { required: true })}>
+                                                    {brands.map((b) => (
+                                                        <MenuItem key={b._id} value={b._id}>
+                                                            {b.name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+
+                                        <Grid item xs={12} sm={6}>
+                                            <FormControl fullWidth error={!!errors.category}>
+                                                <InputLabel>Category *</InputLabel>
+                                                <Select label="Category" {...register("category", { required: true })}>
+                                                    {categories.map((c) => (
+                                                        <MenuItem key={c._id} value={c._id}>
+                                                            {c.name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </Select>
+                                            </FormControl>
+                                        </Grid>
+
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                label="Description *"
+                                                fullWidth
+                                                multiline
+                                                rows={4}
+                                                {...register("description", { required: true })}
+                                                error={!!errors.description}
+                                                helperText={errors.description && "Description is required"}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        {/* Pricing & Stock Card */}
+                        <Grid item xs={12}>
+                            <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+                                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                    <Typography variant="h6" fontWeight={600} mb={3}>
+                                        Pricing & Stock
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                label="Price (₹) *"
+                                                type="number"
+                                                fullWidth
+                                                {...register("price", { required: true, min: 0 })}
+                                                error={!!errors.price}
+                                                helperText={errors.price && "Valid price is required"}
+                                            />
+                                        </Grid>
+
+                                        <Grid item xs={12} sm={6}>
+                                            <TextField
+                                                label="Stock Quantity *"
+                                                type="number"
+                                                fullWidth
+                                                {...register("stockQuantity", { required: true, min: 0 })}
+                                                error={!!errors.stockQuantity}
+                                                helperText={errors.stockQuantity && "Valid stock quantity is required"}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        {/* Sizes Card */}
+                        {availableSizes.length > 0 && (
                             <Grid item xs={12}>
-                                <TextField
-                                    label="Product Title *"
-                                    fullWidth
-                                    {...register("title", { required: true })}
-                                />
+                                <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+                                    <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                        <Typography variant="h6" fontWeight={600} mb={2}>
+                                            Available Sizes *
+                                        </Typography>
+                                        <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                                            {availableSizes.map((size) => (
+                                                <Chip
+                                                    key={size}
+                                                    label={size}
+                                                    onClick={() => toggleSize(size)}
+                                                    color={selectedSizes.includes(size) ? "primary" : "default"}
+                                                    variant={selectedSizes.includes(size) ? "filled" : "outlined"}
+                                                    icon={selectedSizes.includes(size) ? <CheckCircleIcon /> : undefined}
+                                                    sx={{
+                                                        borderRadius: 2,
+                                                        px: 2,
+                                                        py: 2.5,
+                                                        cursor: "pointer",
+                                                        fontWeight: 500,
+                                                    }}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </CardContent>
+                                </Card>
                             </Grid>
+                        )}
 
-                            {/* BRAND */}
-                            <Grid item xs={12} md={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Brand *</InputLabel>
-                                    <Select label="Brand" {...register("brand", { required: true })}>
-                                        {brands.map((b) => (
-                                            <MenuItem key={b._id} value={b._id}>
-                                                {b.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-
-                            {/* CATEGORY */}
-                            <Grid item xs={12} md={6}>
-                                <FormControl fullWidth>
-                                    <InputLabel>Category *</InputLabel>
-                                    <Select
-                                        label="Category"
-                                        {...register("category", { required: true })}
-                                    >
-                                        {categories.map((c) => (
-                                            <MenuItem key={c._id} value={c._id}>
-                                                {c.name}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-
-                            {/* DESCRIPTION */}
-                            <Grid item xs={12}>
-                                <TextField
-                                    label="Description *"
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    {...register("description", { required: true })}
-                                />
-                            </Grid>
-
-                            {/* PRICE */}
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    label="Price (₹) *"
-                                    type="number"
-                                    fullWidth
-                                    {...register("price", { required: true })}
-                                />
-                            </Grid>
-
-                            {/* STOCK */}
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    label="Stock Quantity *"
-                                    type="number"
-                                    fullWidth
-                                    {...register("stockQuantity", { required: true })}
-                                />
-                            </Grid>
-
-                            {/* SIZES */}
-                            {availableSizes.length > 0 && (
-                                <Grid item xs={12}>
-                                    <Typography fontWeight={600} mb={1}>
-                                        Available Sizes *
+                        {/* Images Card */}
+                        <Grid item xs={12}>
+                            <Card elevation={0} sx={{ border: '1px solid #e5e7eb' }}>
+                                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                    <Typography variant="h6" fontWeight={600} mb={3}>
+                                        Product Images
                                     </Typography>
 
-                                    <Stack direction="row" flexWrap="wrap" gap={1.5}>
-                                        {availableSizes.map((size) => (
-                                            <Chip
-                                                key={size}
-                                                label={size}
-                                                onClick={() => toggleSize(size)}
-                                                color={selectedSizes.includes(size) ? "primary" : "default"}
-                                                variant={
-                                                    selectedSizes.includes(size) ? "filled" : "outlined"
-                                                }
-                                                icon={
-                                                    selectedSizes.includes(size) ? (
-                                                        <CheckCircleIcon />
-                                                    ) : undefined
-                                                }
-                                                sx={{
-                                                    borderRadius: 1.5,
-                                                    px: 1,
-                                                    cursor: "pointer",
-                                                }}
-                                            />
-                                        ))}
-                                    </Stack>
-                                </Grid>
-                            )}
-
-                            {/* THUMBNAIL */}
-                            <Grid item xs={12}>
-                                <Typography fontWeight={600} mb={1}>
-                                    Thumbnail Image *
-                                </Typography>
-
-                                <Stack direction="row" gap={2} alignItems="center">
-                                    <Button variant="outlined" component="label" startIcon={<PhotoCamera />}>
-                                        Upload Thumbnail
-                                        <input hidden type="file" accept="image/*" onChange={handleThumbnailChange} />
-                                    </Button>
-
-                                    {thumbnailPreview && (
-                                        <Box position="relative">
-                                            <img
-                                                src={thumbnailPreview}
-                                                style={{
-                                                    width: 90,
-                                                    height: 90,
-                                                    borderRadius: 8,
-                                                    objectFit: "cover",
-                                                }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={handleRemoveThumbnail}
-                                                sx={{
-                                                    position: "absolute",
-                                                    top: -10,
-                                                    right: -10,
-                                                    bgcolor: "white",
-                                                }}
+                                    {/* Thumbnail */}
+                                    <Box mb={3}>
+                                        <Typography variant="subtitle2" fontWeight={600} mb={2}>
+                                            Thumbnail Image *
+                                        </Typography>
+                                        <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
+                                            <Button
+                                                variant="outlined"
+                                                component="label"
+                                                startIcon={<PhotoCamera />}
+                                                sx={{ borderRadius: 2 }}
                                             >
-                                                <ClearIcon fontSize="small" />
-                                            </IconButton>
-                                        </Box>
-                                    )}
-                                </Stack>
-                            </Grid>
+                                                {thumbnailPreview ? "Change" : "Upload"} Thumbnail
+                                                <input hidden type="file" accept="image/*" onChange={handleThumbnailChange} />
+                                            </Button>
 
-                            {/* IMAGES */}
-                            <Grid item xs={12}>
-                                <Typography fontWeight={600} mb={1}>
-                                    Additional Images *
-                                </Typography>
-
-                                <Grid container spacing={2}>
-                                    {[0, 1, 2, 3].map((index) => (
-                                        <Grid item xs={12} sm={6} key={index}>
-                                            <Stack direction="row" gap={2} alignItems="center">
-                                                <Button
-                                                    variant="outlined"
-                                                    component="label"
-                                                    startIcon={<AddPhotoAlternateIcon />}
-                                                >
-                                                    Upload {index + 1}
-                                                    <input
-                                                        hidden
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => handleProductImageChange(e, index)}
+                                            {thumbnailPreview && (
+                                                <Paper elevation={0} sx={{ position: 'relative', border: '2px solid', borderColor: 'primary.main', borderRadius: 2 }}>
+                                                    <img
+                                                        src={thumbnailPreview}
+                                                        style={{
+                                                            width: 100,
+                                                            height: 100,
+                                                            borderRadius: 8,
+                                                            objectFit: "cover",
+                                                        }}
                                                     />
-                                                </Button>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={handleRemoveThumbnail}
+                                                        sx={{
+                                                            position: "absolute",
+                                                            top: -8,
+                                                            right: -8,
+                                                            bgcolor: "error.main",
+                                                            color: "white",
+                                                            '&:hover': { bgcolor: 'error.dark' }
+                                                        }}
+                                                    >
+                                                        <ClearIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Paper>
+                                            )}
+                                        </Stack>
+                                    </Box>
 
-                                                {imagePreviews[index] && (
-                                                    <Box position="relative">
-                                                        <img
-                                                            src={imagePreviews[index]}
-                                                            style={{
-                                                                width: 90,
-                                                                height: 90,
-                                                                borderRadius: 8,
-                                                                objectFit: "cover",
-                                                            }}
-                                                        />
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleRemoveProductImage(index)}
-                                                            sx={{
-                                                                position: "absolute",
-                                                                top: -10,
-                                                                right: -10,
-                                                                bgcolor: "white",
-                                                            }}
-                                                        >
-                                                            <ClearIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Box>
-                                                )}
-                                            </Stack>
+                                    <Divider sx={{ my: 3 }} />
+
+                                    {/* Additional Images */}
+                                    <Box>
+                                        <Typography variant="subtitle2" fontWeight={600} mb={2}>
+                                            Additional Images * (Upload at least 1)
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            {[0, 1, 2, 3].map((index) => (
+                                                <Grid item xs={6} sm={3} key={index}>
+                                                    <Paper
+                                                        elevation={0}
+                                                        sx={{
+                                                            border: '2px dashed',
+                                                            borderColor: imagePreviews[index] ? 'primary.main' : 'grey.300',
+                                                            borderRadius: 2,
+                                                            p: 2,
+                                                            textAlign: 'center',
+                                                            position: 'relative',
+                                                            bgcolor: imagePreviews[index] ? 'transparent' : 'grey.50'
+                                                        }}
+                                                    >
+                                                        {imagePreviews[index] ? (
+                                                            <>
+                                                                <img
+                                                                    src={imagePreviews[index]}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: 120,
+                                                                        borderRadius: 8,
+                                                                        objectFit: "cover",
+                                                                    }}
+                                                                />
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleRemoveProductImage(index)}
+                                                                    sx={{
+                                                                        position: "absolute",
+                                                                        top: 8,
+                                                                        right: 8,
+                                                                        bgcolor: "error.main",
+                                                                        color: "white",
+                                                                        '&:hover': { bgcolor: 'error.dark' }
+                                                                    }}
+                                                                >
+                                                                    <ClearIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </>
+                                                        ) : (
+                                                            <Button
+                                                                component="label"
+                                                                fullWidth
+                                                                sx={{
+                                                                    height: 120,
+                                                                    flexDirection: 'column',
+                                                                    gap: 1
+                                                                }}
+                                                            >
+                                                                <AddPhotoAlternateIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    Image {index + 1}
+                                                                </Typography>
+                                                                <input
+                                                                    hidden
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => handleProductImageChange(e, index)}
+                                                                />
+                                                            </Button>
+                                                        )}
+                                                    </Paper>
+                                                </Grid>
+                                            ))}
                                         </Grid>
-                                    ))}
-                                </Grid>
-                            </Grid>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
 
-                            {/* SUBMIT BUTTON */}
+                        {/* Action Buttons - Desktop Only */}
+                        {!isMobile && (
                             <Grid item xs={12}>
                                 <Stack direction="row" justifyContent="flex-end" gap={2}>
                                     <Button
                                         variant="outlined"
-                                        color="error"
+                                        size="large"
                                         component={Link}
                                         to="/admin/dashboard"
+                                        sx={{ borderRadius: 2, px: 4 }}
                                     >
                                         Cancel
                                     </Button>
 
-                                    <Button type="submit" variant="contained">
-                                        Add Product
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        size="large"
+                                        startIcon={<SaveIcon />}
+                                        sx={{ borderRadius: 2, px: 4 }}
+                                    >
+                                        Save Product
                                     </Button>
                                 </Stack>
                             </Grid>
-                        </Grid>
-                    </form>
-                </CardContent>
-            </Card>
+                        )}
+                    </Grid>
+                </form>
+            </Box>
+
+            {/* Mobile Bottom Navigation Bar */}
+            {isMobile && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1000,
+                        pointerEvents: "none",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            width: "100%",
+                            height: 56,
+                            bgcolor: "rgba(255, 255, 255, 0.7)",
+                            backdropFilter: "blur(20px)",
+                            WebkitBackdropFilter: "blur(20px)",
+                            boxShadow: "0 -1px 20px rgba(0,0,0,0.08)",
+                            borderTopLeftRadius: 20,
+                            borderTopRightRadius: 20,
+                            overflow: "hidden",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: -28,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: 75,
+                                height: 75,
+                                bgcolor: "rgba(255, 255, 255, 0.7)",
+                                backdropFilter: "blur(20px)",
+                                WebkitBackdropFilter: "blur(20px)",
+                                borderRadius: "50%",
+                                boxShadow: "0 -2px 15px rgba(0,0,0,0.08)",
+                            }}
+                        />
+                    </Box>
+
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            bottom: 0,
+                            width: "100%",
+                            height: 56,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-around",
+                            px: 3,
+                            pointerEvents: "auto",
+                        }}
+                    >
+                        <IconButton
+                            component={Link}
+                            to="/admin/dashboard"
+                            sx={{
+                                color: "#666",
+                                "&:hover": {
+                                    color: "#000",
+                                    bgcolor: "rgba(0,0,0,0.05)",
+                                },
+                            }}
+                        >
+                            <HomeIcon sx={{ fontSize: 24 }} />
+                        </IconButton>
+
+                        <Box sx={{ width: 56 }} />
+
+                        <IconButton
+                            component={Link}
+                            to="/admin/orders"
+                            sx={{
+                                color: "#666",
+                                "&:hover": {
+                                    color: "#000",
+                                    bgcolor: "rgba(0,0,0,0.05)",
+                                },
+                            }}
+                        >
+                            <ReceiptLongIcon sx={{ fontSize: 24 }} />
+                        </IconButton>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            left: "50%",
+                            bottom: 18,
+                            transform: "translateX(-50%)",
+                            pointerEvents: "auto",
+                        }}
+                    >
+                        <Fab
+                            type="submit"
+                            onClick={handleSubmit(handleAddProduct)}
+                            sx={{
+                                width: 56,
+                                height: 56,
+                                bgcolor: "#000000",
+                                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
+                                "&:hover": {
+                                    bgcolor: "#1a1a1a",
+                                    transform: "scale(1.08) translateY(-2px)",
+                                    boxShadow: "0 12px 28px rgba(0, 0, 0, 0.4)",
+                                },
+                                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                        >
+                            <SaveIcon sx={{ fontSize: 28, color: "#ffffff" }} />
+                        </Fab>
+                    </Box>
+                </Box>
+            )}
         </Box>
     );
 };
