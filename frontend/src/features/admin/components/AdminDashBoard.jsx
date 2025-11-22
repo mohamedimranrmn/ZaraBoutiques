@@ -179,24 +179,75 @@ export const AdminDashBoard = () => {
         setDeleteDialog({ open: true, product })
     }
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (deleteDialog.product?._id) {
-            dispatch(deleteProductByIdAsync(deleteDialog.product._id))
+            await dispatch(deleteProductByIdAsync(deleteDialog.product._id))
+            // Auto-refresh the products list after deletion
+            const finalFilters = {
+                pagination: { page: page, limit: ITEMS_PER_PAGE }
+            }
+            if (activeFilter === 'deleted') {
+                finalFilters.isDeleted = true
+            } else if (activeFilter === 'active') {
+                finalFilters.isDeleted = false
+            }
+            if (sort) {
+                finalFilters.sort = sort
+            }
+            if (debouncedSearch) {
+                finalFilters.search = debouncedSearch
+            }
+            dispatch(fetchProductsAsync(finalFilters))
+            dispatch(fetchProductStatsAsync())
         }
         setDeleteDialog({ open: false, product: null })
     }
 
-    const handleProductUnDelete = (productId) => {
-        dispatch(undeleteProductByIdAsync(productId))
+    const handleProductUnDelete = async (productId) => {
+        await dispatch(undeleteProductByIdAsync(productId))
+        // Auto-refresh the products list after restore
+        const finalFilters = {
+            pagination: { page: page, limit: ITEMS_PER_PAGE }
+        }
+        if (activeFilter === 'deleted') {
+            finalFilters.isDeleted = true
+        } else if (activeFilter === 'active') {
+            finalFilters.isDeleted = false
+        }
+        if (sort) {
+            finalFilters.sort = sort
+        }
+        if (debouncedSearch) {
+            finalFilters.search = debouncedSearch
+        }
+        dispatch(fetchProductsAsync(finalFilters))
+        dispatch(fetchProductStatsAsync())
     }
 
     const handleForceDelete = (product) => {
         setForceDeleteDialog({ open: true, product })
     }
 
-    const confirmForceDelete = () => {
+    const confirmForceDelete = async () => {
         if (forceDeleteDialog.product?._id) {
-            dispatch(forceDeleteProductByIdAsync(forceDeleteDialog.product._id))
+            await dispatch(forceDeleteProductByIdAsync(forceDeleteDialog.product._id))
+            // Auto-refresh the products list after force deletion
+            const finalFilters = {
+                pagination: { page: page, limit: ITEMS_PER_PAGE }
+            }
+            if (activeFilter === 'deleted') {
+                finalFilters.isDeleted = true
+            } else if (activeFilter === 'active') {
+                finalFilters.isDeleted = false
+            }
+            if (sort) {
+                finalFilters.sort = sort
+            }
+            if (debouncedSearch) {
+                finalFilters.search = debouncedSearch
+            }
+            dispatch(fetchProductsAsync(finalFilters))
+            dispatch(fetchProductStatsAsync())
         }
         setForceDeleteDialog({ open: false, product: null })
     }
@@ -703,11 +754,9 @@ export const AdminDashBoard = () => {
                                                             variant="outlined"
                                                             size="small"
                                                             startIcon={
-                                                                <EditIcon
-                                                                    sx={{ fontSize: { xs: 16, sm: 18 } }}
-                                                                />
+                                                                !isMobile && <EditIcon sx={{ fontSize: 18 }} />
                                                             }
-                                                            fullWidth
+                                                            fullWidth={!product.isDeleted || !isMobile}
                                                             sx={{
                                                                 textTransform: 'none',
                                                                 fontWeight: 500,
@@ -716,32 +765,24 @@ export const AdminDashBoard = () => {
                                                                     xs: '0.7rem',
                                                                     sm: '0.8rem'
                                                                 },
-                                                                py: { xs: 0.5, sm: 0.75 }
+                                                                py: { xs: 0.5, sm: 0.75 },
+                                                                minWidth: product.isDeleted && isMobile ? '40px' : 'auto',
+                                                                px: product.isDeleted && isMobile ? 1 : { xs: 2, sm: 2 }
                                                             }}
                                                         >
-                                                            Edit
+                                                            {product.isDeleted && isMobile ? <EditIcon sx={{ fontSize: 18 }} /> : 'Edit'}
                                                         </Button>
 
                                                         {product.isDeleted ? (
                                                             <>
                                                                 <Button
-                                                                    onClick={() =>
-                                                                        handleProductUnDelete(product._id)
-                                                                    }
+                                                                    onClick={() => handleProductUnDelete(product._id)}
                                                                     variant="outlined"
                                                                     color="success"
                                                                     size="small"
                                                                     startIcon={
-                                                                        <RestoreIcon
-                                                                            sx={{
-                                                                                fontSize: {
-                                                                                    xs: 16,
-                                                                                    sm: 18
-                                                                                }
-                                                                            }}
-                                                                        />
+                                                                        !isMobile && <RestoreIcon sx={{ fontSize: 18 }} />
                                                                     }
-                                                                    fullWidth
                                                                     sx={{
                                                                         textTransform: 'none',
                                                                         fontWeight: 500,
@@ -750,69 +791,60 @@ export const AdminDashBoard = () => {
                                                                             xs: '0.7rem',
                                                                             sm: '0.8rem'
                                                                         },
-                                                                        py: { xs: 0.5, sm: 0.75 }
+                                                                        py: { xs: 0.5, sm: 0.75 },
+                                                                        minWidth: { xs: '70px', sm: 'auto' }
                                                                     }}
                                                                 >
-                                                                    {isMobile ? '' : 'Restore'}
+                                                                    {isMobile ? <RestoreIcon sx={{ fontSize: 18 }} /> : 'Restore'}
                                                                 </Button>
-                                                                <Tooltip title="Delete Permanently">
-                                                                    <IconButton
-                                                                        onClick={() =>
-                                                                            handleForceDelete(product)
-                                                                        }
-                                                                        color="error"
-                                                                        size="small"
-                                                                        sx={{
-                                                                            border: '1px solid',
-                                                                            borderColor: 'error.main',
-                                                                            borderRadius: 1.5,
-                                                                            width: {
-                                                                                xs: 32,
-                                                                                sm: 40
-                                                                            },
-                                                                            height: {
-                                                                                xs: 32,
-                                                                                sm: 40
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <DeleteForeverIcon
-                                                                            sx={{
-                                                                                fontSize: {
-                                                                                    xs: 16,
-                                                                                    sm: 20
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </IconButton>
-                                                                </Tooltip>
-                                                            </>
-                                                        ) : (
-                                                            <Tooltip title="Delete">
-                                                                <IconButton
-                                                                    onClick={() =>
-                                                                        handleProductDelete(product)
-                                                                    }
+                                                                <Button
+                                                                    onClick={() => handleForceDelete(product)}
+                                                                    variant="outlined"
                                                                     color="error"
                                                                     size="small"
+                                                                    startIcon={
+                                                                        !isMobile && <DeleteForeverIcon sx={{ fontSize: 18 }} />
+                                                                    }
                                                                     sx={{
-                                                                        border: '1px solid',
-                                                                        borderColor: 'error.main',
+                                                                        textTransform: 'none',
+                                                                        fontWeight: 500,
                                                                         borderRadius: 1.5,
-                                                                        width: { xs: 32, sm: 40 },
-                                                                        height: { xs: 32, sm: 40 }
+                                                                        fontSize: {
+                                                                            xs: '0.7rem',
+                                                                            sm: '0.8rem'
+                                                                        },
+                                                                        py: { xs: 0.5, sm: 0.75 },
+                                                                        minWidth: { xs: '40px', sm: 'auto' },
+                                                                        px: { xs: 1, sm: 2 }
                                                                     }}
                                                                 >
-                                                                    <DeleteOutlineIcon
-                                                                        sx={{
-                                                                            fontSize: {
-                                                                                xs: 16,
-                                                                                sm: 20
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                </IconButton>
-                                                            </Tooltip>
+                                                                    {isMobile ? <DeleteForeverIcon sx={{ fontSize: 18 }} /> : 'Delete'}
+                                                                </Button>
+                                                            </>
+                                                        ) : (
+                                                            <Button
+                                                                onClick={() => handleProductDelete(product)}
+                                                                variant="outlined"
+                                                                color="error"
+                                                                size="small"
+                                                                startIcon={
+                                                                    !isMobile && <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                                                                }
+                                                                sx={{
+                                                                    textTransform: 'none',
+                                                                    fontWeight: 500,
+                                                                    borderRadius: 1.5,
+                                                                    fontSize: {
+                                                                        xs: '0.7rem',
+                                                                        sm: '0.8rem'
+                                                                    },
+                                                                    py: { xs: 0.5, sm: 0.75 },
+                                                                    minWidth: { xs: '40px', sm: 'auto' },
+                                                                    px: { xs: 1, sm: 2 }
+                                                                }}
+                                                            >
+                                                                {isMobile ? <DeleteOutlineIcon sx={{ fontSize: 18 }} /> : 'Delete'}
+                                                            </Button>
                                                         )}
                                                     </Stack>
                                                 </CardActions>
@@ -992,20 +1024,44 @@ export const AdminDashBoard = () => {
             </Dialog>
 
             {/* Mobile FAB */}
+            // Find and replace the Mobile FAB section at the bottom of the file with this:
+
+            {/* Mobile FAB - Centered Bottom */}
             {isMobile && (
-                <Fab
-                    color="primary"
-                    component={Link}
-                    to="/admin/add-product"
+                <Box
                     sx={{
                         position: 'fixed',
-                        bottom: 20,
-                        right: 20,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        pb: 2,
+                        pt: 1,
+                        background: 'linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 50%, transparent 100%)',
+                        pointerEvents: 'none',
+                        zIndex: 1000
                     }}
                 >
-                    <AddIcon />
-                </Fab>
+                    <Fab
+                        color="primary"
+                        component={Link}
+                        to="/admin/add-product"
+                        sx={{
+                            width: 56,
+                            height: 56,
+                            pointerEvents: 'auto',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                            '&:hover': {
+                                transform: 'scale(1.1)',
+                                boxShadow: '0 6px 24px rgba(0,0,0,0.3)'
+                            },
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <AddIcon sx={{ fontSize: 28 }} />
+                    </Fab>
+                </Box>
             )}
         </>
     )

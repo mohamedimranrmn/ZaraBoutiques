@@ -41,7 +41,7 @@ export const Navbar = () => {
 
     const navigate = useNavigate();
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('600'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     /* -------------------------- SEARCH DEBOUNCE -------------------------- */
     React.useEffect(() => {
@@ -97,22 +97,25 @@ export const Navbar = () => {
                 sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    px: isMobile ? 2 : 4,
+                    px: isMobile ? 1.5 : 4,
                     minHeight: isMobile ? 58 : 70,
+                    gap: isMobile ? 0.5 : 2,
                 }}
             >
                 {/* -------------------------- LOGO -------------------------- */}
                 <Typography
                     component={Link}
-                    to="/"
+                    to={loggedInUser?.isAdmin ? "/admin/dashboard" : "/"}
                     sx={{
                         textDecoration: "none",
-                        fontSize: isMobile ? "1rem" : "1.4rem",
+                        fontSize: isMobile ? "0.75rem" : "1.4rem",
                         fontWeight: 800,
                         background: "linear-gradient(45deg, #000, #E53935)",
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
-                        letterSpacing: ".1rem",
+                        letterSpacing: isMobile ? ".02rem" : ".1rem",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
                     }}
                 >
                     ZARA BOUTIQUES
@@ -135,7 +138,7 @@ export const Navbar = () => {
                                 ),
                                 endAdornment: localSearch && (
                                     <InputAdornment position="end">
-                                        <IconButton onClick={handleClearSearch}>
+                                        <IconButton onClick={handleClearSearch} size="small">
                                             <ClearIcon fontSize="small" />
                                         </IconButton>
                                     </InputAdornment>
@@ -153,7 +156,7 @@ export const Navbar = () => {
 
                 {/* -------------------------- ADMIN BUTTONS INLINE -------------------------- */}
                 {loggedInUser?.isAdmin && (
-                    <Stack direction="row" spacing={isMobile ? 1 : 2}>
+                    <Stack direction="row" spacing={isMobile ? 0.5 : 2} sx={{ flexShrink: 0 }}>
                         {adminItems.map((item) => (
                             <Button
                                 key={item.label}
@@ -163,9 +166,10 @@ export const Navbar = () => {
                                     textTransform: "none",
                                     fontSize: isMobile ? ".65rem" : ".85rem",
                                     fontWeight: 600,
-                                    borderRadius: 4,
+                                    borderRadius: isMobile ? 2 : 4,
                                     px: isMobile ? 1 : 2,
-                                    py: isMobile ? .5 : 1,
+                                    py: isMobile ? 0.5 : 1,
+                                    minWidth: isMobile ? 'auto' : 'auto',
                                     color: item.label === "Logout" ? "#E53935" : "#333",
                                     background: "#f7f7f7",
                                     "&:hover": {
@@ -181,14 +185,14 @@ export const Navbar = () => {
 
                 {/* -------------------------- USER ICONS -------------------------- */}
                 {!loggedInUser?.isAdmin && (
-                    <Stack direction="row" spacing={isMobile ? 1 : 2} alignItems="center">
-                        <IconButton component={Link} to="/wishlist" sx={{ color: "#000" }}>
+                    <Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" sx={{ flexShrink: 0 }}>
+                        <IconButton component={Link} to="/wishlist" sx={{ color: "#000", p: isMobile ? 0.75 : 1 }}>
                             <Badge badgeContent={wishlistItems?.length} color="error">
                                 <FavoriteBorderIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
                             </Badge>
                         </IconButton>
 
-                        <IconButton onClick={() => navigate("/cart")} sx={{ color: "#000" }}>
+                        <IconButton onClick={() => navigate("/cart")} sx={{ color: "#000", p: isMobile ? 0.75 : 1 }}>
                             <Badge badgeContent={cartItems?.length} color="error">
                                 <ShoppingCartOutlinedIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
                             </Badge>
@@ -196,14 +200,14 @@ export const Navbar = () => {
 
                         {/* Avatar */}
                         <Tooltip title="Account">
-                            <IconButton onClick={handleOpenUserMenu}>
+                            <IconButton onClick={handleOpenUserMenu} sx={{ p: isMobile ? 0.75 : 1 }}>
                                 <Avatar
                                     sx={{
-                                        width: isMobile ? 30 : 38,
-                                        height: isMobile ? 30 : 38,
+                                        width: isMobile ? 28 : 38,
+                                        height: isMobile ? 28 : 38,
                                         bgcolor: "#E53935",
                                         fontWeight: 700,
-                                        fontSize: isMobile ? "0.8rem" : "1rem"
+                                        fontSize: isMobile ? "0.75rem" : "1rem"
                                     }}
                                 >
                                     {userInfo?.name?.charAt(0)?.toUpperCase()}
@@ -211,23 +215,44 @@ export const Navbar = () => {
                             </IconButton>
                         </Tooltip>
 
-                        {/* Dropdown */}
+                        {/* User Dropdown - Sharp Corners */}
                         <Menu
                             anchorEl={anchorElUser}
                             open={Boolean(anchorElUser)}
                             onClose={handleCloseUserMenu}
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'right',
+                            }}
+                            transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                            }}
                             PaperProps={{
                                 elevation: 4,
                                 sx: {
                                     mt: 1,
-                                    borderRadius: 2,
-                                    minWidth: 180,
+                                    borderRadius: 0, // Sharp corners
+                                    minWidth: isMobile ? 200 : 220,
+                                    maxWidth: isMobile ? '90vw' : 'none',
                                 }
                             }}
                         >
                             <Box sx={{ px: 2, py: 1.5 }}>
-                                <Typography fontWeight={700}>{userInfo?.name}</Typography>
-                                <Typography fontSize="0.75rem" color="text.secondary">
+                                <Typography
+                                    fontWeight={700}
+                                    sx={{
+                                        fontSize: isMobile ? '0.9rem' : '1rem',
+                                        wordBreak: 'break-word'
+                                    }}
+                                >
+                                    {userInfo?.name}
+                                </Typography>
+                                <Typography
+                                    fontSize={isMobile ? "0.7rem" : "0.75rem"}
+                                    color="text.secondary"
+                                    sx={{ wordBreak: 'break-all' }}
+                                >
                                     {userInfo?.email}
                                 </Typography>
                             </Box>
@@ -245,6 +270,7 @@ export const Navbar = () => {
                                             textDecoration: "none",
                                             color: item.label === "Logout" ? "#E53935" : "#333",
                                             fontWeight: item.label === "Logout" ? 700 : 500,
+                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
                                             width: "100%",
                                         }}>
                                         {item.label}

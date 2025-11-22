@@ -39,7 +39,7 @@ import { ProductCard } from "./ProductCard";
 import { ProductBanner } from "./ProductBanner";
 
 import Lottie from "lottie-react";
-import { loadingAnimation, banner1, banner2, banner3, banner4 } from "../../../assets";
+import { loadingAnimation, banner1, banner2 } from "../../../assets";
 import NotFoundSearch from "../../../assets/animations/NotFoundSearch.json";
 
 import { ITEMS_PER_PAGE } from "../../../constants";
@@ -50,7 +50,7 @@ const sortOptions = [
     { name: "Price: high to low", sort: "price", order: "desc", value: "price-desc" },
 ];
 
-const bannerImages = [banner1, banner2, banner3, banner4];
+const bannerImages = [banner1, banner2];
 
 /* Skeleton Card */
 const ProductCardSkeleton = () => (
@@ -269,7 +269,7 @@ export const ProductList = () => {
                 height: { xs: 180, sm: 260, md: 360, lg: 400 },
                 px: { xs: 1, md: 3 },
                 mt: 1,
-                mb: { xs: 3, sm: 4, md: 12 }
+                mb: { xs: 4, sm: 6, md: 15 }
             }}>
                 <ProductBanner images={bannerImages} />
             </Box>
