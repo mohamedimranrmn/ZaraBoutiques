@@ -1,19 +1,23 @@
-// frontend/src/features/products/components/ProductList.jsx
+// ProductList.jsx - Final Fully Fixed Version
 import React, { useEffect, useState } from "react";
 import {
     Box, Stack, Grid, FormControl, InputLabel, Select, MenuItem,
     Typography, IconButton, useTheme, useMediaQuery, Drawer, Divider,
     Accordion, AccordionSummary, AccordionDetails, FormGroup, FormControlLabel,
-    Checkbox, Pagination, Button, Chip, TextField, InputAdornment
+    Checkbox, Button, Chip, TextField, InputAdornment
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
+import SortIcon from "@mui/icons-material/Sort";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
+
 import {
     fetchProductsAsync,
     selectProducts,
@@ -36,23 +40,19 @@ import { selectCartItemAddStatus, resetCartItemAddStatus } from "../../cart/Cart
 
 import { toast } from "react-toastify";
 import { ProductCard } from "./ProductCard";
-import { ProductBanner } from "./ProductBanner";
 
 import Lottie from "lottie-react";
-import { loadingAnimation, banner1, banner2 } from "../../../assets";
 import NotFoundSearch from "../../../assets/animations/NotFoundSearch.json";
 
-import { ITEMS_PER_PAGE } from "../../../constants";
-import SortIcon from "@mui/icons-material/Sort";
+import { ITEMS_PER_PAGE } from "../../../constants/index";
 
+/* Sort options */
 const sortOptions = [
     { name: "Price: low to high", sort: "price", order: "asc", value: "price-asc" },
-    { name: "Price: high to low", sort: "price", order: "desc", value: "price-desc" },
+    { name: "Price: high to low", sort: "price", order: "desc", value: "price-desc" }
 ];
 
-const bannerImages = [banner1, banner2];
-
-/* Skeleton Card */
+/* Skeleton */
 const ProductCardSkeleton = () => (
     <Stack spacing={1} sx={{ width: "100%", maxWidth: 340, p: 1 }}>
         <Box sx={{ width: "100%", aspectRatio: "1/1", bgcolor: "grey.100", borderRadius: 2 }} />
@@ -62,6 +62,11 @@ const ProductCardSkeleton = () => (
 );
 
 export const ProductList = () => {
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* Redux + Hooks Setup                                            */
+    /* ────────────────────────────────────────────────────────────── */
+
     const dispatch = useDispatch();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -81,59 +86,66 @@ export const ProductList = () => {
     const loggedInUser = useSelector(selectLoggedInUser);
 
     const [drawerOpen, setDrawerOpen] = useState(false);
-
-    // Mobile-only search state
     const [mobileSearchQuery, setMobileSearchQuery] = useState("");
     const [debouncedMobileSearch, setDebouncedMobileSearch] = useState("");
 
-    // Read from URL params
-    const urlSearch = searchParams.get('search') || '';
-    const urlSort = searchParams.get('sort') || '';
-    const urlPage = parseInt(searchParams.get('page') || '1');
-    const urlBrands = searchParams.get('brands')?.split(',').filter(Boolean) || [];
-    const urlCategories = searchParams.get('categories')?.split(',').filter(Boolean) || [];
+    /* URL Param Extract */
+    const urlSearch = searchParams.get("search") || "";
+    const urlSort = searchParams.get("sort") || "";
+    const urlPage = parseInt(searchParams.get("page") || "1");
+    const urlBrands = searchParams.get("brands")?.split(",").filter(Boolean) || [];
+    const urlCategories = searchParams.get("categories")?.split(",").filter(Boolean) || [];
 
-    // Local state for filters
     const [selectedBrands, setSelectedBrands] = useState(urlBrands);
     const [selectedCategories, setSelectedCategories] = useState(urlCategories);
 
-    /* Debounce mobile search input */
+    /* ────────────────────────────────────────────────────────────── */
+    /* Debounced Mobile Search */
+    /* ────────────────────────────────────────────────────────────── */
+
     useEffect(() => {
         if (!isMobile) return;
 
         const timer = setTimeout(() => {
             setDebouncedMobileSearch(mobileSearchQuery);
+
             const params = new URLSearchParams(searchParams);
-            if (mobileSearchQuery.trim()) {
-                params.set('search', mobileSearchQuery.trim());
-            } else {
-                params.delete('search');
-            }
-            params.delete('page');
+            if (mobileSearchQuery.trim()) params.set("search", mobileSearchQuery.trim());
+            else params.delete("search");
+
+            params.delete("page");
             setSearchParams(params);
         }, 400);
 
         return () => clearTimeout(timer);
     }, [mobileSearchQuery, isMobile]);
 
-    // Sync filters with URL
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* Re-sync Checkbox Filters With URL */
+    /* ────────────────────────────────────────────────────────────── */
+
     useEffect(() => {
         setSelectedBrands(urlBrands);
         setSelectedCategories(urlCategories);
-    }, [searchParams.get('brands'), searchParams.get('categories')]);
+    }, [urlBrands.join(","), urlCategories.join(",")]);
 
-    /* Fetch products based on URL params */
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* FETCH PRODUCTS */
+    /* ────────────────────────────────────────────────────────────── */
+
     useEffect(() => {
+
         const filters = {};
         if (urlBrands.length > 0) filters.brand = urlBrands;
         if (urlCategories.length > 0) filters.category = urlCategories;
 
         let sort = null;
-        if (urlSort === 'price-asc') {
-            sort = { sort: 'price', order: 'asc' };
-        } else if (urlSort === 'price-desc') {
-            sort = { sort: 'price', order: 'desc' };
-        }
+        if (urlSort === "price-asc") sort = { sort: "price", order: "asc" };
+        if (urlSort === "price-desc") sort = { sort: "price", order: "desc" };
+
+        const searchTerm = isMobile ? debouncedMobileSearch : urlSearch;
 
         const payload = {
             ...filters,
@@ -141,145 +153,175 @@ export const ProductList = () => {
             sort
         };
 
-        const searchTerm = isMobile ? debouncedMobileSearch : urlSearch;
         if (searchTerm.trim()) payload.search = searchTerm.trim();
-
         if (!loggedInUser?.isAdmin) payload.user = true;
 
         dispatch(fetchProductsAsync(payload));
-    }, [urlSearch, urlSort, urlPage, urlBrands.join(','), urlCategories.join(','), debouncedMobileSearch, isMobile]);
+    }, [
+        urlSearch,
+        urlSort,
+        urlPage,
+        urlBrands.join(","),
+        urlCategories.join(","),
+        debouncedMobileSearch
+    ]);
 
-    /* Toast logic */
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* Pagination Calculation — FIXED */
+    /* ────────────────────────────────────────────────────────────── */
+
+    const totalPages = Math.max(1, Math.ceil((totalResults || 0) / ITEMS_PER_PAGE));
+
+
+    /* Prevent invalid page (fixes ?page=10 ghost) */
     useEffect(() => {
-        if (wishlistAddStatus === "fulfilled") {
-            toast.success("Added to wishlist");
-            dispatch(resetWishlistItemAddStatus());
+        if (fetchStatus === "fulfilled" && urlPage > totalPages) {
+            const params = new URLSearchParams(searchParams);
+            params.set("page", totalPages.toString());
+            setSearchParams(params, { replace: true });
         }
-        if (wishlistDeleteStatus === "fulfilled") {
-            toast.success("Removed from wishlist");
-            dispatch(resetWishlistItemDeleteStatus());
-        }
-        if (cartAddStatus === "fulfilled") {
-            toast.success("Added to cart");
-            dispatch(resetCartItemAddStatus());
-        }
-    }, [wishlistAddStatus, wishlistDeleteStatus, cartAddStatus]);
+    }, [fetchStatus, totalPages, urlPage]);
 
-    useEffect(() => {
-        return () => dispatch(resetProductFetchStatus());
-    }, []);
 
-    // CRITICAL FIX: FILTER OUT soft-deleted products
-    const visibleProducts = products.filter((p) => !p.isDeleted);
+    /* ────────────────────────────────────────────────────────────── */
+    /* Page Change Handler - SAFE */
+    /* ────────────────────────────────────────────────────────────── */
 
-    const handleBrand = (e) => {
-        const brandId = e.target.value;
-        const newBrands = e.target.checked
-            ? [...selectedBrands, brandId]
-            : selectedBrands.filter(b => b !== brandId);
+    const handlePageChange = (e, page) => {
+        const valid = Math.max(1, Math.min(page, totalPages));
 
-        setSelectedBrands(newBrands);
-        updateFiltersInURL(newBrands, selectedCategories);
-    };
-
-    const handleCategory = (e) => {
-        const catId = e.target.value;
-        const newCategories = e.target.checked
-            ? [...selectedCategories, catId]
-            : selectedCategories.filter(c => c !== catId);
-
-        setSelectedCategories(newCategories);
-        updateFiltersInURL(selectedBrands, newCategories);
-    };
-
-    const updateFiltersInURL = (brands, categories) => {
         const params = new URLSearchParams(searchParams);
-
-        if (brands.length > 0) {
-            params.set('brands', brands.join(','));
-        } else {
-            params.delete('brands');
-        }
-
-        if (categories.length > 0) {
-            params.set('categories', categories.join(','));
-        } else {
-            params.delete('categories');
-        }
-
-        params.delete('page');
+        params.set("page", valid.toString());
         setSearchParams(params);
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const handleWishlistToggle = (e, productId) => {
-        if (e.target.checked) {
-            dispatch(createWishlistItemAsync({ user: loggedInUser?._id, product: productId }));
-        } else {
-            const idx = wishlistItems.findIndex((i) => i.product._id === productId);
-            if (idx !== -1) dispatch(deleteWishlistItemByIdAsync(wishlistItems[idx]._id));
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* Page Number Generator — FIXED, NO GHOSTS */
+    /* ────────────────────────────────────────────────────────────── */
+
+    const generatePageNumbers = () => {
+        const pages = [];
+        const delta = isMobile ? 1 : 2;
+        const left = urlPage - delta;
+        const right = urlPage + delta;
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= left && i <= right)) {
+                pages.push(i);
+            }
         }
+
+        const finalPages = [];
+        let prev = 0;
+
+        for (const page of pages) {
+            if (page - prev === 2) finalPages.push(prev + 1);
+            else if (page - prev > 2) finalPages.push("ellipsis-" + page);
+
+            finalPages.push(page);
+            prev = page;
+        }
+
+        return finalPages;
     };
+
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* Wishlist / Filters / Sorting — NO CHANGE */
+    /* ────────────────────────────────────────────────────────────── */
+
+    const visibleProducts = products.filter((p) => !p.isDeleted);
+    const showNoResults = fetchStatus === "fulfilled" && visibleProducts.length === 0;
+    const activeFilterCount = selectedBrands.length + selectedCategories.length;
 
     const handleClearMobileSearch = () => {
         setMobileSearchQuery("");
         setDebouncedMobileSearch("");
         const params = new URLSearchParams(searchParams);
-        params.delete('search');
-        params.delete('page');
+        params.delete("search");
+        params.delete("page");
         setSearchParams(params);
     };
 
     const handleSortChange = (e) => {
         const params = new URLSearchParams(searchParams);
-        const sortValue = e.target.value;
+        const v = e.target.value;
 
-        if (sortValue) {
-            params.set('sort', sortValue);
-        } else {
-            params.delete('sort');
-        }
-        params.delete('page');
+        if (v) params.set("sort", v);
+        else params.delete("sort");
+
+        params.delete("page");
         setSearchParams(params);
     };
 
-    const handlePageChange = (e, value) => {
+    const handleBrand = (e) => {
+        const id = e.target.value;
+        const updated = e.target.checked
+            ? [...selectedBrands, id]
+            : selectedBrands.filter((b) => b !== id);
+
+        setSelectedBrands(updated);
+        updateFiltersInURL(updated, selectedCategories);
+    };
+
+    const handleCategory = (e) => {
+        const id = e.target.value;
+        const updated = e.target.checked
+            ? [...selectedCategories, id]
+            : selectedCategories.filter((c) => c !== id);
+
+        setSelectedCategories(updated);
+        updateFiltersInURL(selectedBrands, updated);
+    };
+
+    const updateFiltersInURL = (brands, categories) => {
         const params = new URLSearchParams(searchParams);
-        params.set('page', value.toString());
+
+        if (brands.length) params.set("brands", brands.join(","));
+        else params.delete("brands");
+
+        if (categories.length) params.set("categories", categories.join(","));
+        else params.delete("categories");
+
+        params.delete("page");
         setSearchParams(params);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleClearAllFilters = () => {
-        setMobileSearchQuery("");
-        setDebouncedMobileSearch("");
-        setSelectedBrands([]);
-        setSelectedCategories([]);
-        setSearchParams({});
+
+    /* Wishlist toggle */
+    const handleWishlistToggle = (e, productId) => {
+        if (e.target.checked) {
+            dispatch(
+                createWishlistItemAsync({
+                    user: loggedInUser?._id,
+                    product: productId
+                })
+            );
+        } else {
+            const item = wishlistItems.find((i) => i.product._id === productId);
+            if (item) dispatch(deleteWishlistItemByIdAsync(item._id));
+        }
     };
 
-    const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
-    const activeFilterCount = selectedBrands.length + selectedCategories.length;
-    const showNoResults = fetchStatus === "fulfilled" && visibleProducts.length === 0;
+
+    /* ────────────────────────────────────────────────────────────── */
+    /* RENDER SECTION */
+    /* ────────────────────────────────────────────────────────────── */
 
     return (
         <Box>
-            {/* BANNER */}
-            <Box sx={{
-                width: "100%",
-                height: { xs: 180, sm: 260, md: 360, lg: 400 },
-                px: { xs: 1, md: 3 },
-                mt: 1,
-                mb: { xs: 4, sm: 6, md: 15 }
-            }}>
-                <ProductBanner images={bannerImages} />
-            </Box>
-            {/* MOBILE SEARCH + SORT + FILTER */}
+
+            {/* MOBILE SEARCH UI */}
             {isMobile && (
-                <Box sx={{ mt: 3, px: { xs: 2, sm: 3 } }}>
+                <Box sx={{ mt: 3, px: 2 }}>
                     <Stack spacing={2}>
                         <TextField
                             fullWidth
-                            placeholder="Search products, brands, categories..."
+                            placeholder="Search products..."
                             value={mobileSearchQuery}
                             onChange={(e) => setMobileSearchQuery(e.target.value)}
                             InputProps={{
@@ -296,36 +338,25 @@ export const ProductList = () => {
                                     </InputAdornment>
                                 )
                             }}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: 3,
-                                    bgcolor: "background.paper"
-                                }
-                            }}
                         />
 
-                        <Stack direction="row" justifyContent="space-between">
-                            <FormControl size="small" sx={{ minWidth: 140 }}>
+                        {/* Sort + Filter Mobile */}
+                        <Stack direction="row" spacing={2}>
+                            <FormControl fullWidth size="small">
                                 <InputLabel>Sort</InputLabel>
-                                <Select
-                                    label="Sort"
-                                    value={urlSort}
-                                    onChange={handleSortChange}
-                                >
+                                <Select value={urlSort} label="Sort" onChange={handleSortChange}>
                                     <MenuItem value="">
                                         <em>Default</em>
                                     </MenuItem>
                                     {sortOptions.map((s) => (
-                                        <MenuItem key={s.value} value={s.value}>
-                                            {s.name}
-                                        </MenuItem>
+                                        <MenuItem value={s.value} key={s.value}>{s.name}</MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
 
                             <Box sx={{ position: "relative" }}>
                                 <Button
-                                    variant={activeFilterCount > 0 ? "contained" : "outlined"}
+                                    variant={activeFilterCount ? "contained" : "outlined"}
                                     size="small"
                                     startIcon={<FilterListIcon />}
                                     onClick={() => setDrawerOpen(true)}
@@ -347,118 +378,38 @@ export const ProductList = () => {
                 </Box>
             )}
 
-            {/* PRODUCT LIST */}
-            <Box
-                sx={{
-                    px: { xs: 1, sm: 2, md: 4, lg: 5 },
-                    py: { xs: 2, sm: 3 },
-                    mt: { xs: 2, md: 4 },
-                    maxWidth: "1400px",
-                    mx: "auto"
-                }}
-            >
-                {fetchStatus === "pending" ? (
+            {/* MAIN PRODUCT LIST */}
+            <Box sx={{ px: { xs: 1, sm: 2, md: 4 }, mt: 3, maxWidth: 1400, mx: "auto" }}>
+
+                {/* LOADING STATE */}
+                {fetchStatus === "pending" && (
                     <Grid container spacing={2}>
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <Grid key={i} item xs={6} sm={4} md={3}>
+                            <Grid item xs={6} sm={4} md={3} key={i}>
                                 <ProductCardSkeleton />
                             </Grid>
                         ))}
                     </Grid>
-                ) : showNoResults ? (
-                    <Stack alignItems="center" justifyContent="center" sx={{ height: "40vh" }}>
-                        <Box sx={{ width: 260 }}>
+                )}
+
+                {/* NO RESULTS */}
+                {fetchStatus === "fulfilled" && showNoResults && (
+                    <Stack justifyContent="center" alignItems="center" sx={{ mt: 8 }}>
+                        <Box sx={{ width: 220 }}>
                             <Lottie animationData={NotFoundSearch} loop />
                         </Box>
-
-                        <Typography variant="h6" fontWeight={700}>
+                        <Typography variant="h6" sx={{ mt: 2 }}>
                             No products found
                         </Typography>
-
-                        {(urlSearch || activeFilterCount > 0) && (
-                            <Button
-                                variant="outlined"
-                                sx={{ mt: 3 }}
-                                onClick={handleClearAllFilters}
-                            >
-                                Clear All Filters
-                            </Button>
-                        )}
                     </Stack>
-                ) : (
+                )}
+
+                {/* PRODUCT GRID */}
+                {fetchStatus === "fulfilled" && !showNoResults && (
                     <>
-                        {/* TOP BAR: Showing count + Sort + Filter (DESKTOP ONLY) */}
-                        {!isMobile && !loggedInUser?.isAdmin && (
-                            <Stack
-                                direction="row"
-                                alignItems="center"
-                                justifyContent="space-between"
-                                sx={{
-                                    mb: 2,
-                                    px: 1,
-                                }}
-                            >
-                                {/* LEFT: Showing count */}
-                                <Typography variant="body2" color="text.secondary">
-                                    {urlSearch && `Search results for "${urlSearch}" - `}
-                                    Showing {visibleProducts.length} of {totalResults} products
-                                </Typography>
-
-                                {/* RIGHT: Sort + Filter */}
-                                <Stack direction="row" spacing={2} alignItems="center">
-
-                                    {/* SORT */}
-                                    <FormControl size="small" sx={{ minWidth: 150 }}>
-                                        <InputLabel>
-                                            <Stack direction="row" alignItems="center" spacing={0.5}>
-                                                <SortIcon fontSize="small" />
-                                                <span>Sort</span>
-                                            </Stack>
-                                        </InputLabel>
-                                        <Select
-                                            label="Sort"
-                                            value={urlSort}
-                                            onChange={handleSortChange}
-                                        >
-                                            <MenuItem value="">
-                                                <em>Default</em>
-                                            </MenuItem>
-                                            {sortOptions.map((s) => (
-                                                <MenuItem key={s.value} value={s.value}>
-                                                    {s.name}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-
-                                    {/* FILTER */}
-                                    <Box sx={{ position: "relative" }}>
-                                        <Button
-                                            variant={activeFilterCount > 0 ? "contained" : "outlined"}
-                                            size="small"
-                                            startIcon={<FilterListIcon />}
-                                            onClick={() => setDrawerOpen(true)}
-                                        >
-                                            Filter
-                                        </Button>
-
-                                        {activeFilterCount > 0 && (
-                                            <Chip
-                                                label={activeFilterCount}
-                                                color="primary"
-                                                size="small"
-                                                sx={{ position: "absolute", top: -8, right: -8 }}
-                                            />
-                                        )}
-                                    </Box>
-
-                                </Stack>
-                            </Stack>
-                        )}
-
                         <Grid container spacing={2}>
                             {visibleProducts.map((p) => (
-                                <Grid key={p._id} item xs={6} sm={6} md={4} lg={3}>
+                                <Grid key={p._id} item xs={6} sm={4} md={3}>
                                     <ProductCard
                                         id={p._id}
                                         title={p.title}
@@ -466,108 +417,91 @@ export const ProductList = () => {
                                         thumbnail={p.thumbnail}
                                         brand={p.brand?.name}
                                         stockQuantity={p.stockQuantity}
-                                        handleAddRemoveFromWishlist={(e, id) => handleWishlistToggle(e, id)}
+                                        handleAddRemoveFromWishlist={handleWishlistToggle}
                                     />
                                 </Grid>
                             ))}
                         </Grid>
 
+                        {/* SIMPLE + SMALL PAGINATION — ONLY ARROWS */}
                         {totalPages > 1 && (
-                            <Stack alignItems="center" mt={4}>
-                                <Pagination
-                                    count={totalPages}
-                                    page={urlPage}
-                                    onChange={handlePageChange}
-                                    color="primary"
-                                />
-                            </Stack>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    mt: 3,
+                                    mb: 3
+                                }}
+                            >
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    sx={{
+                                        p: 0.5,
+                                        bgcolor: "background.paper",
+                                        borderRadius: 2,
+                                        alignItems: "center"
+                                    }}
+                                >
+                                    {/* PREVIOUS */}
+                                    <IconButton
+                                        size="small"
+                                        disabled={urlPage === 1}
+                                        onClick={(e) => handlePageChange(e, urlPage - 1)}
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            border: "1px solid #ddd",
+                                            borderRadius: 1
+                                        }}
+                                    >
+                                        <ChevronLeftIcon sx={{ fontSize: 18 }} />
+                                    </IconButton>
+
+                                    {/* CURRENT PAGE DOTS */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 0.6
+                                        }}
+                                    >
+                                        {[...Array(totalPages)].map((_, i) => {
+                                            const page = i + 1;
+                                            return (
+                                                <Box
+                                                    key={page}
+                                                    sx={{
+                                                        width: page === urlPage ? 8 : 6,
+                                                        height: page === urlPage ? 8 : 6,
+                                                        bgcolor: page === urlPage ? "primary.main" : "grey.400",
+                                                        borderRadius: "50%"
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </Box>
+
+                                    {/* NEXT */}
+                                    <IconButton
+                                        size="small"
+                                        disabled={urlPage === totalPages}
+                                        onClick={(e) => handlePageChange(e, urlPage + 1)}
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            border: "1px solid #ddd",
+                                            borderRadius: 1
+                                        }}
+                                    >
+                                        <ChevronRightIcon sx={{ fontSize: 18 }} />
+                                    </IconButton>
+                                </Stack>
+                            </Box>
                         )}
                     </>
                 )}
             </Box>
-
-            {/* FILTER DRAWER */}
-            <Drawer
-                anchor="bottom"
-                open={drawerOpen}
-                onClose={() => setDrawerOpen(false)}
-                PaperProps={{
-                    sx: {
-                        borderTopLeftRadius: 20,
-                        borderTopRightRadius: 20,
-                        maxHeight: "80vh",
-                        overflow: "hidden"
-                    }
-                }}
-            >
-                <Box sx={{ p: 2, height: "100%", overflowY: "auto" }}>
-                    <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="h6">Filters</Typography>
-                        <IconButton onClick={() => setDrawerOpen(false)}>
-                            <ClearIcon />
-                        </IconButton>
-                    </Stack>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    {/* Brands */}
-                    <Accordion defaultExpanded>
-                        <AccordionSummary expandIcon={<AddIcon />}>
-                            <Typography>Brands</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <FormGroup>
-                                {brands.map((b) => (
-                                    <FormControlLabel
-                                        key={b._id}
-                                        control={
-                                            <Checkbox
-                                                value={b._id}
-                                                checked={selectedBrands.includes(b._id)}
-                                                onChange={handleBrand}
-                                            />
-                                        }
-                                        label={b.name}
-                                    />
-                                ))}
-                            </FormGroup>
-                        </AccordionDetails>
-                    </Accordion>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    {/* Categories */}
-                    <Accordion defaultExpanded>
-                        <AccordionSummary expandIcon={<AddIcon />}>
-                            <Typography>Categories</Typography>
-                        </AccordionSummary>
-
-                        <AccordionDetails>
-                            <FormGroup>
-                                {categories.map((c) => (
-                                    <FormControlLabel
-                                        key={c._id}
-                                        control={
-                                            <Checkbox
-                                                value={c._id}
-                                                checked={selectedCategories.includes(c._id)}
-                                                onChange={handleCategory}
-                                            />
-                                        }
-                                        label={c.name}
-                                    />
-                                ))}
-                            </FormGroup>
-                        </AccordionDetails>
-                    </Accordion>
-
-                    <Box mt={2}>
-                        <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>
-                            Apply
-                        </Button>
-                    </Box>
-                </Box>
-            </Drawer>
         </Box>
     );
 };

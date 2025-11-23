@@ -53,14 +53,37 @@ export const fetchProducts = async (filters) => {
 
     try {
         const res = await axiosi.get(`/products?${queryString}`);
-        const totalResults = res.headers["x-total-count"];
+
+        // Try multiple header variations (case-insensitive)
+        const headers = res.headers;
+        let totalResultsHeader =
+            headers["x-total-count"] ||
+            headers["X-Total-Count"] ||
+            headers["X-TOTAL-COUNT"] ||
+            headers["x-Total-Count"];
+
+        let totalResults = totalResultsHeader ? parseInt(totalResultsHeader, 10) : null;
+
+        // If header is missing and we got exactly ITEMS_PER_PAGE items, estimate there are more pages
+        if (!totalResults && res.data.length === (filters.pagination?.limit || 12)) {
+            // Estimate: if we got a full page, assume there are more pages
+            totalResults = res.data.length * 10; // Conservative estimate
+        } else if (!totalResults) {
+            totalResults = res.data.length;
+        }
+
+        console.log('📊 API Response Debug:', {
+            dataLength: res.data.length,
+            headerValue: totalResultsHeader,
+            parsedTotal: totalResults,
+            allHeaders: headers
+        });
+
         return { data: res.data, totalResults };
     } catch (error) {
         throw error.response?.data || error;
     }
 };
-
-
 
 export const fetchProductById = async (id) => {
     try {

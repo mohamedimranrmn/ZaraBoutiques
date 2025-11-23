@@ -77,7 +77,6 @@ export const ProductCard = ({
             </Paper>
         );
     }
-
     return (
         <Paper
             elevation={1}
