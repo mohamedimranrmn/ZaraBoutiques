@@ -99,6 +99,7 @@ exports.getAll = async (req, res) => {
             limit = pageSize;
         }
 
+        // ✅ IMPORTANT: Count BEFORE pagination
         const totalDocs = await Product.countDocuments(filter);
 
         let query = Product.find(filter)
@@ -110,7 +111,9 @@ exports.getAll = async (req, res) => {
 
         const results = await query.exec();
 
+        // ✅ FIXED: Set header (already exposed in CORS config)
         res.set("X-Total-Count", totalDocs);
+
         return res.status(200).json(results);
 
     } catch (error) {
@@ -135,7 +138,7 @@ exports.getStats = async (req, res) => {
 };
 
 /* ============================================================
-   GET PRODUCT BY ID - ✅ FIXED
+   GET PRODUCT BY ID
 ============================================================ */
 exports.getById = async (req, res) => {
     try {
@@ -149,7 +152,7 @@ exports.getById = async (req, res) => {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        // ✅ FIXED: Return product with isDeleted flag instead of 410
+        // Return product with isDeleted flag instead of 410
         // This allows frontend to show unavailable state with product details
         if (product.isDeleted && !req.query.admin) {
             return res.status(200).json({

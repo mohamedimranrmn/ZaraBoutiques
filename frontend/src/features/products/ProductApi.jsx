@@ -54,7 +54,7 @@ export const fetchProducts = async (filters) => {
     try {
         const res = await axiosi.get(`/products?${queryString}`);
 
-        // Try multiple header variations (case-insensitive)
+        // Get total count from header (case-insensitive)
         const headers = res.headers;
         let totalResultsHeader =
             headers["x-total-count"] ||
@@ -62,22 +62,40 @@ export const fetchProducts = async (filters) => {
             headers["X-TOTAL-COUNT"] ||
             headers["x-Total-Count"];
 
+        // Parse the header value - this is the CORRECT total count from backend
         let totalResults = totalResultsHeader ? parseInt(totalResultsHeader, 10) : null;
-
-        // If header is missing and we got exactly ITEMS_PER_PAGE items, estimate there are more pages
-        if (!totalResults && res.data.length === (filters.pagination?.limit || 12)) {
-            // Estimate: if we got a full page, assume there are more pages
-            totalResults = res.data.length * 10; // Conservative estimate
-        } else if (!totalResults) {
-            totalResults = res.data.length;
-        }
 
         console.log('📊 API Response Debug:', {
             dataLength: res.data.length,
             headerValue: totalResultsHeader,
             parsedTotal: totalResults,
-            allHeaders: headers
+            allHeaders: Object.keys(headers),
+            page: filters.pagination?.page,
+            limit: filters.pagination?.limit
         });
+
+        // Fallback: if header is missing, use intelligent estimation
+        if (!totalResults || totalResults === 0) {
+            console.warn('⚠️ X-Total-Count header missing or zero. Using estimation.');
+
+            const currentPage = filters.pagination?.page || 1;
+            const pageSize = filters.pagination?.limit || 12;
+            const itemsOnCurrentPage = res.data.length;
+
+            if (itemsOnCurrentPage === pageSize) {
+                // Full page = there might be more pages
+                // Estimate: at least current page worth of items
+                totalResults = currentPage * pageSize;
+            } else if (itemsOnCurrentPage < pageSize && currentPage === 1) {
+                // First page not full = this is all the data
+                totalResults = itemsOnCurrentPage;
+            } else {
+                // Partial last page = calculate total
+                totalResults = (currentPage - 1) * pageSize + itemsOnCurrentPage;
+            }
+
+            console.log('🔢 Estimated totalResults:', totalResults);
+        }
 
         return { data: res.data, totalResults };
     } catch (error) {

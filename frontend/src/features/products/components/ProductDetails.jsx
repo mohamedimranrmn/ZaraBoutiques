@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 import {
     clearSelectedProduct,
@@ -46,6 +47,7 @@ import { Reviews } from "../../review/components/Reviews";
 import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
 import Favorite from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ShareIcon from "@mui/icons-material/Share";
 
 import {
     createWishlistItemAsync,
@@ -70,6 +72,7 @@ import { useTheme } from "@mui/material";
 import { fetchProductStock } from "../ProductApi";
 
 const AutoPlaySwipeableViews = autoPlay(SwipeableViews);
+
 
 // Avoid duplicate toasts for the same status
 const useOnceToast = (status, successMsg, errorMsg, resetAction) => {
@@ -98,6 +101,35 @@ export const ProductDetails = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
     const product = useSelector(selectSelectedProduct);
+    const handleShareProduct = async () => {
+        if (!product) return;
+
+        const productUrl = `https://zaraboutiques.onrender.com/product-details/${product._id}`;
+        const firstImage = product.images?.[0];
+
+        const shareContent =
+            `${product.title}\n` +
+            `Price: ₹${product.price}\n\n` +
+            `${product.description?.slice(0, 150) || ""}\n\n` +
+            `Image: ${firstImage}\n` +
+            `Link: ${productUrl}`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: product.title,
+                    text: shareContent,
+                    url: productUrl
+                });
+            } catch (_) {}
+        } else {
+            try {
+                await navigator.clipboard.writeText(shareContent);
+            } catch (_) {}
+        }
+    };
+
+
     const loggedInUser = useSelector(selectLoggedInUser);
     const cartItems = useSelector(selectCartItems);
     const cartItemAddStatus = useSelector(selectCartItemAddStatus);
@@ -492,6 +524,22 @@ export const ProductDetails = () => {
                 bgcolor: alpha(theme.palette.grey[50], 0.3),
             }}
         >
+            <Helmet>
+                <title>{product.title}</title>
+
+                <meta property="og:title" content={product.title} />
+                <meta property="og:description" content={product.description?.slice(0, 150) || ""} />
+                <meta property="og:image" content={product.images?.[0]} />
+
+                <meta property="og:url" content={`https://zaraboutiques.onrender.com/product-details/${product._id}`} />
+                <meta property="og:type" content="product" />
+
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={product.title} />
+                <meta name="twitter:description" content={product.description?.slice(0, 150) || ""} />
+                <meta name="twitter:image" content={product.images?.[0]} />
+            </Helmet>
+
             {/* Desktop top bar */}
             {!isMobile && (
                 <Box
@@ -791,19 +839,6 @@ export const ProductDetails = () => {
                                                 </ToggleButton>
                                             ))}
                                         </ToggleButtonGroup>
-                                        {isSizeRequired && !selectedSize && !isUnavailable && (
-                                            <Typography
-                                                variant="caption"
-                                                color="error.main"
-                                                sx={{
-                                                    mt: 1,
-                                                    display: "block",
-                                                    fontWeight: 500,
-                                                }}
-                                            >
-                                                * Size selection required
-                                            </Typography>
-                                        )}
                                     </Box>
                                 )}
 
@@ -941,62 +976,64 @@ export const ProductDetails = () => {
                                             Add to Cart
                                         </Button>
                                     )}
+                                    <Stack direction="row" spacing={2} mt={1}>
 
-                                    <Stack
-                                        direction="row"
-                                        alignItems="center"
-                                        spacing={1}
-                                        sx={{
-                                            p: 1,
-                                            borderRadius: 1.5,
-                                            border: "1px solid",
-                                            borderColor: "divider",
-                                            bgcolor: alpha(theme.palette.grey[50], 0.5),
-                                        }}
-                                    >
-                                        <Checkbox
-                                            checked={isInWishlist}
-                                            disabled={isUnavailable}
-                                            onChange={(e) => {
+                                        {/* Add to Wishlist (50%) */}
+                                        <Button
+                                            variant="outlined"
+                                            fullWidth
+                                            sx={{
+                                                height: 48,
+                                                borderRadius: 1.5,
+                                                textTransform: "none",
+                                                fontWeight: 600,
+                                            }}
+                                            onClick={() => {
                                                 if (!loggedInUser) {
                                                     toast.error("Please login to manage wishlist");
                                                     return;
                                                 }
 
-                                                if (isUnavailable) {
-                                                    toast.error(
-                                                        "This product is no longer available"
-                                                    );
-                                                    return;
-                                                }
+                                                if (isUnavailable) return;
 
-                                                if (e.target.checked) {
+                                                if (isInWishlist) {
+                                                    const existing = wishlistItems.find(
+                                                        (i) => i.product && i.product._id === id
+                                                    );
+                                                    if (existing) {
+                                                        dispatch(deleteWishlistItemByIdAsync(existing._id));
+                                                    }
+                                                } else {
                                                     dispatch(
                                                         createWishlistItemAsync({
                                                             user: loggedInUser._id,
                                                             product: id,
                                                         })
                                                     );
-                                                } else {
-                                                    const existing = wishlistItems.find(
-                                                        (i) =>
-                                                            i.product && i.product._id === id
-                                                    );
-                                                    if (existing) {
-                                                        dispatch(
-                                                            deleteWishlistItemByIdAsync(existing._id)
-                                                        );
-                                                    }
                                                 }
                                             }}
-                                            icon={<FavoriteBorder />}
-                                            checkedIcon={
-                                                <Favorite sx={{ color: "red" }} />
+                                            startIcon={
+                                                isInWishlist ? <Favorite sx={{ color: "red" }} /> : <FavoriteBorder />
                                             }
-                                        />
-                                        <Typography fontWeight={500}>
-                                            Add to Wishlist
-                                        </Typography>
+                                        >
+                                            Wishlist
+                                        </Button>
+
+                                        {/* Share Product (50%) */}
+                                        <Button
+                                            variant="outlined"
+                                            fullWidth
+                                            sx={{
+                                                height: 48,
+                                                borderRadius: 1.5,
+                                                textTransform: "none",
+                                                fontWeight: 600,
+                                            }}
+                                            startIcon={<ShareIcon />}
+                                            onClick={handleShareProduct}
+                                        >
+                                            Share
+                                        </Button>
                                     </Stack>
                                 </Stack>
                             </Stack>

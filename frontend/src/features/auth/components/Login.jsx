@@ -28,6 +28,7 @@ import {
 } from '../AuthSlice';
 
 export const Login = () => {
+    const [googleLoading, setGoogleLoading] = React.useState(false);
     const dispatch = useDispatch();
     const status = useSelector(selectLoginStatus);
     const error = useSelector(selectLoginError);
@@ -65,24 +66,55 @@ export const Login = () => {
     };
 
     const handleGoogleLogin = async (credentialResponse) => {
+        setGoogleLoading(true);
+
         const credential = credentialResponse.credential;
         if (!credential) {
+            setGoogleLoading(false);
             toast.error("Google login failed");
             return;
         }
+
         try {
             const resultAction = await dispatch(googleLoginAsync(credential));
+
             if (googleLoginAsync.fulfilled.match(resultAction)) {
-                console.log("✅ Google login successful");
+                console.log("Google login successful");
             } else {
-                const errorMsg = resultAction.payload?.message || "Google authentication failed";
-                toast.error(errorMsg);
+                setGoogleLoading(false);
+                toast.error(resultAction.payload?.message || "Google authentication failed");
             }
         } catch (err) {
-            console.error("Google login error:", err);
+            setGoogleLoading(false);
             toast.error("An unexpected error occurred");
         }
     };
+
+    {googleLoading && (
+        <Box
+            sx={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "rgba(255,255,255,0.8)",
+                backdropFilter: "blur(6px)",
+                zIndex: 2000
+            }}
+        >
+            <Box sx={{ width: 180 }}>
+                <Lottie animationData={ecommerceOutlookAnimation} loop />
+            </Box>
+            <Typography variant="body1" sx={{ mt: 2 }} color="text.secondary">
+                Connecting to Google...
+            </Typography>
+        </Box>
+    )}
+
 
     return (
         <Stack
@@ -232,6 +264,7 @@ export const Login = () => {
                         >
                             <Box
                                 onClick={() => {
+                                    setGoogleLoading(true); // start loader immediately
                                     document.querySelector('[role="button"]')?.click();
                                 }}
                                 sx={{

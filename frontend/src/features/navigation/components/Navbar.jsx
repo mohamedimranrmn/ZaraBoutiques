@@ -7,7 +7,6 @@ import Menu from '@mui/material/Menu';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Badge,
     Stack,
@@ -23,6 +22,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectUserInfo } from '../../user/UserSlice';
 import { selectLoggedInUser } from '../../auth/AuthSlice';
@@ -34,16 +34,16 @@ export const Navbar = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [localSearch, setLocalSearch] = React.useState(searchParams.get('search') || '');
 
-    const userInfo = useSelector(selectUserInfo);
-    const loggedInUser = useSelector(selectLoggedInUser);
-    const wishlistItems = useSelector(selectWishlistItems);
-    const cartItems = useSelector(selectCartItems);
-
-    const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    /* -------------------------- SEARCH DEBOUNCE -------------------------- */
+    const navigate = useNavigate();
+    const loggedInUser = useSelector(selectLoggedInUser);
+    const userInfo = useSelector(selectUserInfo);
+    const wishlistItems = useSelector(selectWishlistItems);
+    const cartItems = useSelector(selectCartItems);
+
+    /* --- Debounce Search Query --- */
     React.useEffect(() => {
         const timer = setTimeout(() => {
             const params = new URLSearchParams(searchParams);
@@ -51,27 +51,20 @@ export const Navbar = () => {
             else params.delete('search');
             params.delete('page');
             setSearchParams(params);
-        }, 350);
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [localSearch]);
 
     const handleClearSearch = () => {
-        setLocalSearch('');
+        setLocalSearch("");
         const params = new URLSearchParams(searchParams);
-        params.delete('search');
-        params.delete('page');
+        params.delete("search");
+        params.delete("page");
         setSearchParams(params);
     };
 
-    /* -------------------------- ADMIN NAVIGATION -------------------------- */
-    const adminItems = [
-        { label: "Home", to: "/admin/dashboard" },
-        { label: "Orders", to: "/admin/orders" },
-        { label: "Logout", to: "/logout" }
-    ];
-
-    /* -------------------------- USER DROPDOWN -------------------------- */
+    /* -------------------------- DROPDOWN -------------------------- */
     const userMenuItems = [
         { label: "Home", to: "/" },
         { label: "Profile", to: "/profile" },
@@ -79,18 +72,14 @@ export const Navbar = () => {
         { label: "Logout", to: "/logout" }
     ];
 
-    /* -------------------------- DROPDOWN HANDLERS -------------------------- */
-    const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
-    const handleCloseUserMenu = () => setAnchorElUser(null);
-
     return (
         <AppBar
             position="sticky"
             sx={{
-                background: "#fff",
+                background: "#ffffff",
                 color: "#000",
-                borderBottom: "1px solid #eaeaea",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                borderBottom: "1px solid #e5e5e5",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
             }}
         >
             <Toolbar
@@ -98,36 +87,33 @@ export const Navbar = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     px: isMobile ? 1.5 : 4,
-                    minHeight: isMobile ? 58 : 70,
-                    gap: isMobile ? 0.5 : 2,
+                    minHeight: isMobile ? 58 : 72,
+                    gap: 2,
                 }}
             >
                 {/* -------------------------- LOGO -------------------------- */}
                 <Typography
                     component={Link}
-                    to={loggedInUser?.isAdmin ? "/admin/dashboard" : "/"}
+                    to="/"
                     sx={{
                         textDecoration: "none",
-                        fontSize: isMobile ? "0.75rem" : "1.4rem",
+                        fontSize: isMobile ? "1rem" : "1.4rem",
                         fontWeight: 800,
-                        background: "linear-gradient(45deg, #000, #E53935)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        letterSpacing: isMobile ? ".02rem" : ".1rem",
+                        color: "#000",
+                        letterSpacing: ".03rem",
                         whiteSpace: "nowrap",
-                        flexShrink: 0,
                     }}
                 >
                     ZARA BOUTIQUES
                 </Typography>
 
-                {/* -------------------------- SEARCH (USER ONLY) -------------------------- */}
+                {/* -------------------------- SEARCH DESKTOP -------------------------- */}
                 {!isMobile && !loggedInUser?.isAdmin && (
                     <Box sx={{ flexGrow: 1, px: 4 }}>
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="Search for products..."
+                            placeholder="Search products..."
                             value={localSearch}
                             onChange={(e) => setLocalSearch(e.target.value)}
                             InputProps={{
@@ -142,97 +128,136 @@ export const Navbar = () => {
                                             <ClearIcon fontSize="small" />
                                         </IconButton>
                                     </InputAdornment>
-                                )
+                                ),
                             }}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 3,
-                                    bgcolor: "#f7f7f7",
-                                }
+                                    background: "#f5f5f5",
+                                    "& fieldset": {
+                                        borderColor: "#ddd",
+                                    },
+                                    "&:hover fieldset": {
+                                        borderColor: "#c5c5c5",
+                                    },
+                                    "&.Mui-focused fieldset": {
+                                        borderColor: "#000",
+                                    },
+                                },
                             }}
                         />
                     </Box>
                 )}
 
+                {/* -------------------------- ADMIN BUTTONS -------------------------- */}
                 {loggedInUser?.isAdmin && (
                     <Stack
                         direction="row"
                         spacing={isMobile ? 1 : 2}
-                        sx={{ flexShrink: 0, alignItems: "center" }}
+                        alignItems="center"
+                        sx={{ flexShrink: 0 }}
                     >
                         {isMobile ? (
-                            // Mobile: Show welcome message + logout only
                             <>
                                 <Typography
                                     sx={{
-                                        fontSize: "0.75rem",
+                                        fontSize: "0.8rem",
                                         fontWeight: 600,
-                                        color: "#666",
                                         whiteSpace: "nowrap",
+                                        color: "#333"
                                     }}
                                 >
-                                    Welcome, Admin
+                                    Admin Panel
                                 </Typography>
                                 <Button
                                     component={Link}
                                     to="/logout"
                                     sx={{
                                         textTransform: "none",
-                                        fontSize: ".7rem",
+                                        fontSize: ".75rem",
                                         fontWeight: 600,
                                         borderRadius: 2,
-                                        px: 1.5,
-                                        py: 0.5,
+                                        px: 2,
+                                        py: 0.6,
                                         minWidth: 'auto',
-                                        color: "#E53935",
-                                        background: "#f7f7f7",
-                                        "&:hover": {
-                                            background: "#ececec",
-                                        },
+                                        color: "#d32f2f",
+                                        background: "#f5f5f5",
+                                        "&:hover": { background: "#e9e9e9" }
                                     }}
                                 >
                                     Logout
                                 </Button>
                             </>
                         ) : (
-                            // Desktop: Show all buttons
-                            adminItems.map((item) => (
+                            <>
                                 <Button
-                                    key={item.label}
                                     component={Link}
-                                    to={item.to}
+                                    to="/admin/dashboard"
                                     sx={{
                                         textTransform: "none",
-                                        fontSize: ".85rem",
+                                        fontSize: ".9rem",
                                         fontWeight: 600,
-                                        borderRadius: 4,
-                                        px: 2,
+                                        borderRadius: 2,
+                                        px: 3,
                                         py: 1,
-                                        minWidth: 'auto',
-                                        color: item.label === "Logout" ? "#E53935" : "#333",
-                                        background: "#f7f7f7",
-                                        "&:hover": {
-                                            background: "#ececec",
-                                        },
+                                        color: "#333",
+                                        background: "#f5f5f5",
+                                        "&:hover": { background: "#e9e9e9" }
                                     }}
                                 >
-                                    {item.label}
+                                    Dashboard
                                 </Button>
-                            ))
+
+                                <Button
+                                    component={Link}
+                                    to="/admin/orders"
+                                    sx={{
+                                        textTransform: "none",
+                                        fontSize: ".9rem",
+                                        fontWeight: 600,
+                                        borderRadius: 2,
+                                        px: 3,
+                                        py: 1,
+                                        color: "#333",
+                                        background: "#f5f5f5",
+                                        "&:hover": { background: "#e9e9e9" }
+                                    }}
+                                >
+                                    Orders
+                                </Button>
+
+                                <Button
+                                    component={Link}
+                                    to="/logout"
+                                    sx={{
+                                        textTransform: "none",
+                                        fontSize: ".9rem",
+                                        fontWeight: 600,
+                                        borderRadius: 2,
+                                        px: 3,
+                                        py: 1,
+                                        color: "#d32f2f",
+                                        background: "#f5f5f5",
+                                        "&:hover": { background: "#e9e9e9" }
+                                    }}
+                                >
+                                    Logout
+                                </Button>
+                            </>
                         )}
                     </Stack>
                 )}
 
-                {/* -------------------------- USER ICONS -------------------------- */}
+                {/* -------------------------- RIGHT SIDE ICONS -------------------------- */}
                 {!loggedInUser?.isAdmin && (
-                    <Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" sx={{ flexShrink: 0 }}>
-                        <IconButton component={Link} to="/wishlist" sx={{ color: "#000", p: isMobile ? 0.75 : 1 }}>
+                    <Stack direction="row" spacing={isMobile ? 1 : 2} alignItems="center">
+                        <IconButton component={Link} to="/wishlist" sx={{ color: "#000" }}>
                             <Badge badgeContent={wishlistItems?.length} color="error">
                                 <FavoriteBorderIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
                             </Badge>
                         </IconButton>
 
-                        <IconButton onClick={() => navigate("/cart")} sx={{ color: "#000", p: isMobile ? 0.75 : 1 }}>
+                        <IconButton onClick={() => navigate("/cart")} sx={{ color: "#000" }}>
                             <Badge badgeContent={cartItems?.length} color="error">
                                 <ShoppingCartOutlinedIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
                             </Badge>
@@ -240,14 +265,15 @@ export const Navbar = () => {
 
                         {/* Avatar */}
                         <Tooltip title="Account">
-                            <IconButton onClick={handleOpenUserMenu} sx={{ p: isMobile ? 0.75 : 1 }}>
+                            <IconButton onClick={(e) => setAnchorElUser(e.currentTarget)}>
                                 <Avatar
                                     sx={{
-                                        width: isMobile ? 28 : 38,
-                                        height: isMobile ? 28 : 38,
-                                        bgcolor: "#E53935",
+                                        width: isMobile ? 30 : 36,
+                                        height: isMobile ? 30 : 36,
                                         fontWeight: 700,
-                                        fontSize: isMobile ? "0.75rem" : "1rem"
+                                        fontSize: isMobile ? "0.75rem" : "0.9rem",
+                                        bgcolor: "#000",
+                                        color: "#fff",
                                     }}
                                 >
                                     {userInfo?.name?.charAt(0)?.toUpperCase()}
@@ -255,64 +281,40 @@ export const Navbar = () => {
                             </IconButton>
                         </Tooltip>
 
-                        {/* User Dropdown - Sharp Corners */}
+                        {/* Dropdown */}
                         <Menu
                             anchorEl={anchorElUser}
                             open={Boolean(anchorElUser)}
-                            onClose={handleCloseUserMenu}
-                            anchorOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'right',
-                            }}
-                            transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
+                            onClose={() => setAnchorElUser(null)}
                             PaperProps={{
-                                elevation: 4,
+                                elevation: 0,
                                 sx: {
-                                    mt: 1,
-                                    borderRadius: 0, // Sharp corners
-                                    minWidth: isMobile ? 200 : 220,
-                                    maxWidth: isMobile ? '90vw' : 'none',
-                                }
+                                    mt: 1.5,
+                                    borderRadius: 2,
+                                    boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
+                                },
                             }}
                         >
                             <Box sx={{ px: 2, py: 1.5 }}>
-                                <Typography
-                                    fontWeight={700}
-                                    sx={{
-                                        fontSize: isMobile ? '0.9rem' : '1rem',
-                                        wordBreak: 'break-word'
-                                    }}
-                                >
-                                    {userInfo?.name}
-                                </Typography>
-                                <Typography
-                                    fontSize={isMobile ? "0.7rem" : "0.75rem"}
-                                    color="text.secondary"
-                                    sx={{ wordBreak: 'break-all' }}
-                                >
+                                <Typography fontWeight={700}>{userInfo?.name}</Typography>
+                                <Typography variant="body2" color="text.secondary">
                                     {userInfo?.email}
                                 </Typography>
                             </Box>
                             <Divider />
 
                             {userMenuItems.map((item) => (
-                                <MenuItem
-                                    key={item.label}
-                                    onClick={handleCloseUserMenu}
-                                >
+                                <MenuItem key={item.label} onClick={() => setAnchorElUser(null)}>
                                     <Typography
                                         component={Link}
                                         to={item.to}
                                         sx={{
                                             textDecoration: "none",
-                                            color: item.label === "Logout" ? "#E53935" : "#333",
-                                            fontWeight: item.label === "Logout" ? 700 : 500,
-                                            fontSize: isMobile ? '0.85rem' : '0.95rem',
                                             width: "100%",
-                                        }}>
+                                            color: item.label === "Logout" ? "red" : "inherit",
+                                            fontWeight: item.label === "Logout" ? 600 : 500,
+                                        }}
+                                    >
                                         {item.label}
                                     </Typography>
                                 </MenuItem>

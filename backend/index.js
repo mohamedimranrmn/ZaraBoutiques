@@ -34,6 +34,7 @@ const corsOptions = {
     ],
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
+    exposedHeaders: ["X-Total-Count"], // ✅ ADDED: Expose custom headers
 };
 
 server.use(cors(corsOptions));   // USE ONLY ONCE

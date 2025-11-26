@@ -30,7 +30,8 @@ import {
   getAllOrdersAsync,
   updateOrderByIdAsync,
   selectOrders,
-  selectOrderUpdateStatus
+  selectOrderUpdateStatus,
+  selectOrderFetchStatus
 } from '../../order/OrderSlice';
 import { toast } from 'react-toastify';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -51,6 +52,9 @@ import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
 import Fab from '@mui/material/Fab';
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import Lottie from "lottie-react";
+import { loadingAnimation } from "../../../assets";
+
 
 const statusColors = {
   'Pending': 'warning',
@@ -70,6 +74,7 @@ const statusIcons = {
 
 export const AdminOrders = () => {
   const dispatch = useDispatch();
+  const orderFetchStatus = useSelector(selectOrderFetchStatus);
   const orders = useSelector(selectOrders);
   const updateStatus = useSelector(selectOrderUpdateStatus);
   const theme = useTheme();
@@ -567,7 +572,27 @@ export const AdminOrders = () => {
         </Paper>
 
         {/* Orders Grid */}
-        {filteredAndSortedOrders.length > 0 ? (
+        {/* Orders Grid */}
+        {orderFetchStatus === "pending" || orders.length === 0 ? (
+            /* Loading Animation */
+            <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: "45vh",
+                  py: 4
+                }}
+            >
+              <Box sx={{ width: 180 }}>
+                <Lottie animationData={loadingAnimation} loop />
+              </Box>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                Loading orders...
+              </Typography>
+            </Box>
+        ) : filteredAndSortedOrders.length > 0 ? (
             <Grid container spacing={3}>
               {filteredAndSortedOrders.map((order) => {
                 const StatusIcon = statusIcons[order.status] || ShoppingBagIcon;
