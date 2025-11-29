@@ -1,100 +1,86 @@
 import { axiosi } from "../../config/axios";
 
-export const addProduct = async (data) => {
-    try {
-        const res = await axiosi.post('/products', data)
-        return res.data
-    } catch (error) {
-        throw error.response.data
-    }
-}
+/* ----------------------------------------------------------
+   Helper: Build query string safely
+---------------------------------------------------------- */
+const buildQuery = (filters = {}) => {
+    const params = new URLSearchParams();
 
-export const fetchProducts = async (filters) => {
-    let queryString = '';
+    // Search
+    if (filters.search) params.append("search", filters.search);
 
-    // SEARCH support
-    if (filters.search) {
-        queryString += `search=${filters.search}&`;
+    // Brands (array)
+    if (Array.isArray(filters.brand) && filters.brand.length > 0) {
+        filters.brand.forEach(b => params.append("brand", b));
     }
 
-    // Brand filter
-    if (filters.brand) {
-        filters.brand.forEach((brand) => {
-            queryString += `brand=${brand}&`;
-        });
-    }
-
-    // Category filter
-    if (filters.category) {
-        filters.category.forEach((category) => {
-            queryString += `category=${category}&`;
-        });
+    // Categories (array)
+    if (Array.isArray(filters.category) && filters.category.length > 0) {
+        filters.category.forEach(c => params.append("category", c));
     }
 
     // Pagination
     if (filters.pagination) {
-        queryString += `page=${filters.pagination.page}&limit=${filters.pagination.limit}&`;
+        params.append("page", filters.pagination.page);
+        params.append("limit", filters.pagination.limit);
     }
 
-    // Sort
+    // Sorting
     if (filters.sort) {
-        queryString += `sort=${filters.sort.sort}&order=${filters.sort.order}&`;
+        params.append("sort", filters.sort.sort);
+        params.append("order", filters.sort.order);
     }
 
-    // Frontend user check
-    if (filters.user) {
-        queryString += `user=${filters.user}&`;
-    }
+    // Frontend requesting user
+    if (filters.user) params.append("user", filters.user);
 
-    // isDeleted filter (admin)
+    // Deleted filter (admin)
     if (filters.isDeleted !== undefined) {
-        queryString += `isDeleted=${filters.isDeleted}&`;
+        params.append("isDeleted", filters.isDeleted);
     }
 
+    return params.toString();
+};
+
+/* ----------------------------------------------------------
+   ADD PRODUCT
+---------------------------------------------------------- */
+export const addProduct = async (data) => {
     try {
+        const res = await axiosi.post("/products", data);
+        return res.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+/* ----------------------------------------------------------
+   FETCH PRODUCTS (with full filter support)
+---------------------------------------------------------- */
+export const fetchProducts = async (filters = {}) => {
+    try {
+        const queryString = buildQuery(filters);
         const res = await axiosi.get(`/products?${queryString}`);
 
-        // Get total count from header (case-insensitive)
+        // Read total count header (case insensitive)
         const headers = res.headers;
-        let totalResultsHeader =
+        const totalHeader =
             headers["x-total-count"] ||
             headers["X-Total-Count"] ||
             headers["X-TOTAL-COUNT"] ||
             headers["x-Total-Count"];
 
-        // Parse the header value - this is the CORRECT total count from backend
-        let totalResults = totalResultsHeader ? parseInt(totalResultsHeader, 10) : null;
+        let totalResults = totalHeader ? parseInt(totalHeader, 10) : null;
 
-        console.log('📊 API Response Debug:', {
-            dataLength: res.data.length,
-            headerValue: totalResultsHeader,
-            parsedTotal: totalResults,
-            allHeaders: Object.keys(headers),
-            page: filters.pagination?.page,
-            limit: filters.pagination?.limit
-        });
-
-        // Fallback: if header is missing, use intelligent estimation
+        // Intelligent fallback when header is missing
         if (!totalResults || totalResults === 0) {
-            console.warn('⚠️ X-Total-Count header missing or zero. Using estimation.');
+            const page = filters.pagination?.page || 1;
+            const limit = filters.pagination?.limit || 12;
+            const count = res.data.length;
 
-            const currentPage = filters.pagination?.page || 1;
-            const pageSize = filters.pagination?.limit || 12;
-            const itemsOnCurrentPage = res.data.length;
-
-            if (itemsOnCurrentPage === pageSize) {
-                // Full page = there might be more pages
-                // Estimate: at least current page worth of items
-                totalResults = currentPage * pageSize;
-            } else if (itemsOnCurrentPage < pageSize && currentPage === 1) {
-                // First page not full = this is all the data
-                totalResults = itemsOnCurrentPage;
-            } else {
-                // Partial last page = calculate total
-                totalResults = (currentPage - 1) * pageSize + itemsOnCurrentPage;
-            }
-
-            console.log('🔢 Estimated totalResults:', totalResults);
+            if (count === limit) totalResults = page * limit;
+            else if (page === 1) totalResults = count;
+            else totalResults = (page - 1) * limit + count;
         }
 
         return { data: res.data, totalResults };
@@ -103,58 +89,74 @@ export const fetchProducts = async (filters) => {
     }
 };
 
+/* ----------------------------------------------------------
+   FETCH PRODUCT BY ID
+---------------------------------------------------------- */
 export const fetchProductById = async (id) => {
     try {
-        const res = await axiosi.get(`/products/${id}`)
-        return res.data
+        const res = await axiosi.get(`/products/${id}`);
+        return res.data;
     } catch (error) {
-        throw error.response.data
+        throw error.response?.data || error;
     }
-}
+};
 
+/* ----------------------------------------------------------
+   UPDATE PRODUCT
+---------------------------------------------------------- */
 export const updateProductById = async (update) => {
     try {
-        const res = await axiosi.patch(`/products/${update._id}`, update)
-        return res.data
+        const res = await axiosi.patch(`/products/${update._id}`, update);
+        return res.data;
     } catch (error) {
-        throw error.response.data
+        throw error.response?.data || error;
     }
-}
+};
 
+/* ----------------------------------------------------------
+   UNDELETE PRODUCT
+---------------------------------------------------------- */
 export const undeleteProductById = async (id) => {
     try {
-        const res = await axiosi.patch(`/products/undelete/${id}`)
-        return res.data
+        const res = await axiosi.patch(`/products/undelete/${id}`);
+        return res.data;
     } catch (error) {
-        throw error.response.data
+        throw error.response?.data || error;
     }
-}
+};
 
+/* ----------------------------------------------------------
+   SOFT DELETE PRODUCT
+---------------------------------------------------------- */
 export const deleteProductById = async (id) => {
     try {
-        const res = await axiosi.delete(`/products/${id}`)
-        return res.data
+        const res = await axiosi.delete(`/products/${id}`);
+        return res.data;
     } catch (error) {
-        throw error.response.data
+        throw error.response?.data || error;
     }
-}
+};
 
-// Force delete product
+/* ----------------------------------------------------------
+   FORCE DELETE (ADMIN)
+---------------------------------------------------------- */
 export const forceDeleteProductById = async (id) => {
     try {
-        const res = await axiosi.delete(`/products/force/${id}`)
-        return res.data
+        const res = await axiosi.delete(`/products/force/${id}`);
+        return res.data;
     } catch (error) {
-        throw error.response.data
+        throw error.response?.data || error;
     }
-}
+};
 
-// NEW: Fetch live stock for a product
+/* ----------------------------------------------------------
+   LIVE STOCK (Optional feature)
+---------------------------------------------------------- */
 export const fetchProductStock = async (id) => {
     try {
-        const res = await axiosi.get(`/products/stock/${id}`)
-        return res.data   // { stockQuantity: number }
+        const res = await axiosi.get(`/products/stock/${id}`);
+        return res.data; // { stockQuantity: number }
     } catch (error) {
-        throw error.response?.data || error
+        throw error.response?.data || error;
     }
-}
+};

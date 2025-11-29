@@ -183,10 +183,28 @@ export const Reviews = ({productId,averageRating}) => {
                 </Stack>
                 )
                 :
-                !loggedInUser?.isAdmin?
-                <motion.div onClick={()=>setWriteReview(!writeReview)} whileHover={{scale:1.050}} whileTap={{scale:1}} style={{width:"fit-content"}}>
-                        <Button  disableElevation size={is480?"medium":'large'} variant='contained' sx={{color:theme.palette.primary.light,textTransform:"none",fontSize:"1rem",borderRadius:'6px'}}  startIcon={<CreateIcon/>}>Write a review</Button>
-                </motion.div>:""
+                    loggedInUser && !loggedInUser.isAdmin ? (
+                        <motion.div onClick={() => setWriteReview(!writeReview)}
+                                    whileHover={{ scale: 1.050 }}
+                                    whileTap={{ scale: 1 }}
+                                    style={{ width: "fit-content" }}
+                        >
+                            <Button
+                                disableElevation
+                                size={is480 ? "medium" : "large"}
+                                variant="contained"
+                                sx={{
+                                    color: theme.palette.primary.light,
+                                    textTransform: "none",
+                                    fontSize: "1rem",
+                                    borderRadius: "6px",
+                                }}
+                                startIcon={<CreateIcon />}
+                            >
+                                Write a review
+                            </Button>
+                        </motion.div>
+                    ) : null
             }
         </Stack>
   )

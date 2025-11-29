@@ -14,7 +14,7 @@ import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
 import { orderSuccessAnimation } from '../assets';
 
-const PaymentSuccessDialog = ({ open, orderId, onViewOrder }) => {
+const PaymentSuccessDialog = ({ open, orderId, onContinue }) => {
     const theme = useTheme();
 
     return (
@@ -55,13 +55,9 @@ const PaymentSuccessDialog = ({ open, orderId, onViewOrder }) => {
                         style={{ position: 'relative' }}
                     >
                         <Box sx={{ width: { xs: 200, sm: 250 }, mx: 'auto' }}>
-                            <Lottie
-                                animationData={orderSuccessAnimation}
-                                loop={false}
-                            />
+                            <Lottie animationData={orderSuccessAnimation} loop={false} />
                         </Box>
 
-                        {/* Pulse */}
                         <motion.div
                             style={{
                                 position: 'absolute',
@@ -106,12 +102,12 @@ const PaymentSuccessDialog = ({ open, orderId, onViewOrder }) => {
                                 color="text.secondary"
                                 sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                             >
-                                Your order has been placed successfully
+                                Thank you for shopping with us!
                             </Typography>
                         </Stack>
                     </motion.div>
 
-                    {/* View Order Details Button */}
+                    {/* Continue Shopping Button */}
                     <Button
                         variant="contained"
                         color="success"
@@ -123,7 +119,7 @@ const PaymentSuccessDialog = ({ open, orderId, onViewOrder }) => {
                             borderRadius: 2,
                             fontWeight: 600
                         }}
-                        onClick={() => onViewOrder(orderId)}   // 🚀 GUARANTEED TO WORK
+                        onClick={onContinue}   // ⬅ You handle redirect in parent
                     >
                         Continue Shopping
                     </Button>

@@ -288,8 +288,7 @@ export const ProductDetails = () => {
 
     const handleAddToCart = () => {
         if (!loggedInUser) {
-            toast.error("Please login to add items to cart");
-            return;
+            return navigate("/login");
         }
 
         if (isUnavailable) {
@@ -330,6 +329,11 @@ export const ProductDetails = () => {
     };
 
     const handleBuyNowNavigate = () => {
+
+        if (!loggedInUser) {
+            return navigate("/login");
+        }
+
         if (isUnavailable) {
             toast.error("This product is no longer available");
             return;
@@ -990,9 +994,9 @@ export const ProductDetails = () => {
                                             }}
                                             onClick={() => {
                                                 if (!loggedInUser) {
-                                                    toast.error("Please login to manage wishlist");
-                                                    return;
+                                                    return navigate("/login");
                                                 }
+
 
                                                 if (isUnavailable) return;
 

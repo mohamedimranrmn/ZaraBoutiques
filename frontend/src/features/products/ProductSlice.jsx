@@ -8,7 +8,7 @@ import {
     updateProductById,
     forceDeleteProductById
 } from "./ProductApi";
-import {axiosi} from "../../config/axios";
+import { axiosi } from "../../config/axios";
 
 const initialState = {
     status: "idle",
@@ -24,7 +24,6 @@ const initialState = {
     stats: { total: 0, active: 0, deleted: 0 },
     statsStatus: "idle",
 };
-
 
 /* ============================================
    THUNKS
@@ -76,38 +75,25 @@ export const forceDeleteProductByIdAsync = createAsyncThunk(
 /* ============================================
    SLICE
 ============================================ */
+
 const productSlice = createSlice({
     name: "ProductSlice",
     initialState,
     reducers: {
-        clearProductErrors: (state) => {
-            state.errors = null;
-        },
-        clearProductSuccessMessage: (state) => {
-            state.successMessage = null;
-        },
-        resetProductStatus: (state) => {
-            state.status = "idle";
-        },
-        clearSelectedProduct: (state) => {
-            state.selectedProduct = null;
-        },
-        resetProductUpdateStatus: (state) => {
-            state.productUpdateStatus = "idle";
-        },
-        resetProductAddStatus: (state) => {
-            state.productAddStatus = "idle";
-        },
-        toggleFilters: (state) => {
-            state.isFilterOpen = !state.isFilterOpen;
-        },
-        resetProductFetchStatus: (state) => {
-            state.productFetchStatus = "idle";
-        }
+        clearProductErrors: (state) => { state.errors = null },
+        clearProductSuccessMessage: (state) => { state.successMessage = null },
+        resetProductStatus: (state) => { state.status = "idle" },
+        clearSelectedProduct: (state) => { state.selectedProduct = null },
+        resetProductUpdateStatus: (state) => { state.productUpdateStatus = "idle" },
+        resetProductAddStatus: (state) => { state.productAddStatus = "idle" },
+        toggleFilters: (state) => { state.isFilterOpen = !state.isFilterOpen },
+        resetProductFetchStatus: (state) => { state.productFetchStatus = "idle" }
     },
+
     extraReducers: (builder) => {
         builder
-            /* --------------------- ADD PRODUCT --------------------- */
+
+            /* ---------------- ADD PRODUCT ---------------- */
             .addCase(addProductAsync.pending, (state) => {
                 state.productAddStatus = "pending";
             })
@@ -120,7 +106,7 @@ const productSlice = createSlice({
                 state.errors = action.error;
             })
 
-            /* --------------------- FETCH PRODUCTS --------------------- */
+            /* ---------------- FETCH PRODUCTS ---------------- */
             .addCase(fetchProductsAsync.pending, (state) => {
                 state.productFetchStatus = "pending";
             })
@@ -134,7 +120,7 @@ const productSlice = createSlice({
                 state.errors = action.error;
             })
 
-            /* --------------------- FETCH BY ID --------------------- */
+            /* ---------------- FETCH BY ID ---------------- */
             .addCase(fetchProductByIdAsync.pending, (state) => {
                 state.productFetchStatus = "pending";
             })
@@ -147,7 +133,7 @@ const productSlice = createSlice({
                 state.errors = action.error;
             })
 
-            /* --------------------- UPDATE PRODUCT --------------------- */
+            /* ---------------- UPDATE PRODUCT ---------------- */
             .addCase(updateProductByIdAsync.pending, (state) => {
                 state.productUpdateStatus = "pending";
             })
@@ -163,24 +149,39 @@ const productSlice = createSlice({
                 state.errors = action.error;
             })
 
-            /* --------------------- UNDELETE PRODUCT --------------------- */
+            /* ---------------- UNDELETE PRODUCT ---------------- */
+            .addCase(undeleteProductByIdAsync.pending, (state) => {
+                state.productUpdateStatus = "pending";
+            })
             .addCase(undeleteProductByIdAsync.fulfilled, (state, action) => {
-                state.status = "fulfilled";
+                state.productUpdateStatus = "fulfilled";
                 const index = state.products.findIndex(
                     (p) => p._id === action.payload._id
                 );
                 if (index !== -1) state.products[index] = action.payload;
             })
+            .addCase(undeleteProductByIdAsync.rejected, (state, action) => {
+                state.productUpdateStatus = "rejected";
+                state.errors = action.error;
+            })
 
-            /* --------------------- SOFT DELETE PRODUCT --------------------- */
+            /* ---------------- SOFT DELETE PRODUCT ---------------- */
+            .addCase(deleteProductByIdAsync.pending, (state) => {
+                state.productUpdateStatus = "pending";
+            })
             .addCase(deleteProductByIdAsync.fulfilled, (state, action) => {
-                state.status = "fulfilled";
+                state.productUpdateStatus = "fulfilled";
                 const index = state.products.findIndex(
                     (p) => p._id === action.payload._id
                 );
                 if (index !== -1) state.products[index] = action.payload;
             })
+            .addCase(deleteProductByIdAsync.rejected, (state, action) => {
+                state.productUpdateStatus = "rejected";
+                state.errors = action.error;
+            })
 
+            /* ---------------- PRODUCT STATS ---------------- */
             .addCase(fetchProductStatsAsync.pending, (state) => {
                 state.statsStatus = "pending";
             })
@@ -192,13 +193,20 @@ const productSlice = createSlice({
                 state.statsStatus = "rejected";
             })
 
-            /* --------------------- FORCE DELETE PRODUCT --------------------- */
+            /* ---------------- FORCE DELETE PRODUCT ---------------- */
+            .addCase(forceDeleteProductByIdAsync.pending, (state) => {
+                state.status = "pending";
+            })
             .addCase(forceDeleteProductByIdAsync.fulfilled, (state, action) => {
                 state.status = "fulfilled";
                 state.products = state.products.filter(
                     (p) => p._id !== action.payload._id
                 );
                 state.totalResults -= 1;
+            })
+            .addCase(forceDeleteProductByIdAsync.rejected, (state, action) => {
+                state.status = "rejected";
+                state.errors = action.error;
             });
     }
 });
@@ -206,6 +214,7 @@ const productSlice = createSlice({
 /* ============================================
    SELECTORS
 ============================================ */
+
 export const selectProductStats = (state) => state.ProductSlice.stats;
 export const selectProductStatus = (state) => state.ProductSlice.status;
 export const selectProducts = (state) => state.ProductSlice.products;
@@ -221,6 +230,7 @@ export const selectProductFetchStatus = (state) => state.ProductSlice.productFet
 /* ============================================
    ACTIONS
 ============================================ */
+
 export const {
     clearProductSuccessMessage,
     clearProductErrors,

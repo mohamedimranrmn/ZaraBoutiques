@@ -52,7 +52,11 @@ export const ProductCard = ({
 
     const handleBuyNow = (e) => {
         e.stopPropagation();
-        // Navigate to checkout with only this product (buyNow flow)
+
+        if (!loggedInUser) {
+            return navigate("/login");
+        }
+
         navigate("/checkout", {
             state: {
                 buyNow: true,
@@ -67,6 +71,7 @@ export const ProductCard = ({
             },
         });
     };
+
 
     if (loading) {
         return (

@@ -6,7 +6,7 @@ export const Protected = ({ children, requiresAdmin = false }) => {
     const user = useSelector(selectLoggedInUser);
 
     if (!user || !user.isVerified) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to={`/login?redirect=${window.location.pathname}`} replace />;
     }
 
     if (requiresAdmin && !user.isAdmin) {

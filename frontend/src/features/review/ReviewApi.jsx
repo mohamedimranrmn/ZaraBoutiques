@@ -1,35 +1,67 @@
-import {axiosi} from '../../config/axios'
+import { axiosi } from "../../config/axios";
 
-export const createReview=async(review)=>{
-    try {
-        const res=await axiosi.post('/reviews',review)
-        return res.data
-    } catch (error) {
-        throw error.response.data
-    }
-}
-export const fetchReviewsByProductId=async(id)=>{
-    try {
-        const res=await axiosi.get(`/reviews/product/${id}`)
-        return res.data
-    } catch (error) {
-        throw error.response.data
-    }
-}
+/**
+ * Normalizes axios error so thunks never break
+ */
+const normalizeError = (error) => {
+    if (error?.response?.data) return error.response.data;
+    if (error?.response) return { message: "Server error", ...error.response };
+    if (error?.request) return { message: "Network error – no response from server" };
+    return { message: error?.message || "Unexpected error" };
+};
 
-export const updateReviewById=async(update)=>{
+/**
+ * Ensures API always returns a predictable object:
+ * { success: boolean, data: any, message?: string }
+ */
+const safeReturn = (res) => {
+    if (res?.data !== undefined) return res.data;
+    return { success: true, data: res };
+};
+
+/* ---------------------------------------------------------------------- */
+/*                                API CALLS                               */
+/* ---------------------------------------------------------------------- */
+
+/* CREATE REVIEW */
+export const createReview = async (review) => {
     try {
-        const res=await axiosi.patch(`/reviews/${update._id}`,update)
-        return res.data
+        const res = await axiosi.post("/reviews", review);
+        return safeReturn(res);
     } catch (error) {
-        throw error.response.data
+        throw normalizeError(error);
     }
-}
-export const deleteReviewById=async(id)=>{
+};
+
+/* FETCH REVIEWS FOR A PRODUCT */
+export const fetchReviewsByProductId = async (id) => {
     try {
-        const res=await axiosi.delete(`/reviews/${id}`)
-        return res.data
+        const res = await axiosi.get(`/reviews/product/${id}`);
+        return safeReturn(res);
     } catch (error) {
-        throw error.response.data
+        throw normalizeError(error);
     }
-}
+};
+
+/* UPDATE REVIEW */
+export const updateReviewById = async (update) => {
+    try {
+        const res = await axiosi.patch(`/reviews/${update._id}`, update);
+        return safeReturn(res);
+    } catch (error) {
+        throw normalizeError(error);
+    }
+};
+
+/* DELETE REVIEW */
+export const deleteReviewById = async (id) => {
+    try {
+        const res = await axiosi.delete(`/reviews/${id}`);
+
+        // Normalize delete so it *always* returns {_id}
+        if (res?.data?._id) return { _id: res.data._id };
+        return { _id: id };
+    } catch (error) {
+        throw normalizeError(error);
+    }
+};

@@ -10,6 +10,11 @@ export const createOrder=async(order)=>{
     }
 }
 
+export const getOrderById = async (id) => {
+    const res = await axiosi.get(`/orders/${id}`);
+    return res.data;
+};
+
 export const getOrderByUserId=async(id)=>{
     try {
         const res=await axiosi.get(`/orders/user/${id}`)

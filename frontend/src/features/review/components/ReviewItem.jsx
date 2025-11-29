@@ -39,7 +39,11 @@ export const ReviewItem = ({id,username,userid,comment,rating,createdAt}) => {
     setEdit(false)
   }
 
-  const isOwnReview = userid && loggedInUser?._id && userid === loggedInUser._id;
+    const isOwnReview =
+        loggedInUser &&
+        !loggedInUser.isAdmin &&
+        userid &&
+        userid === loggedInUser._id;
 
 
     return (

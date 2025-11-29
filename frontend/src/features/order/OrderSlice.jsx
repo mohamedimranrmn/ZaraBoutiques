@@ -5,6 +5,7 @@ import {
     verifyRazorpayPayment,
     getAllOrders,
     getOrderByUserId,
+    getOrderById,
     updateOrderById
 } from './OrderApi';
 
@@ -19,7 +20,7 @@ const initialState = {
 };
 
 /* ============================================================
-   1. CREATE COD ORDER
+   CREATE COD ORDER
    ============================================================ */
 export const createOrderAsync = createAsyncThunk(
     "orders/createOrderAsync",
@@ -30,7 +31,7 @@ export const createOrderAsync = createAsyncThunk(
 );
 
 /* ============================================================
-   2. CREATE RAZORPAY ORDER — REQUIRES phoneVerifiedToken
+   CREATE RAZORPAY ORDER
    ============================================================ */
 export const createRazorpayOrderAsync = createAsyncThunk(
     "orders/createRazorpayOrderAsync",
@@ -41,7 +42,7 @@ export const createRazorpayOrderAsync = createAsyncThunk(
 );
 
 /* ============================================================
-   3. VERIFY PAYMENT (after success modal)
+   VERIFY PAYMENT
    ============================================================ */
 export const verifyRazorpayPaymentAsync = createAsyncThunk(
     "orders/verifyRazorpayPaymentAsync",
@@ -71,6 +72,17 @@ export const getOrderByUserIdAsync = createAsyncThunk(
 );
 
 /* ============================================================
+   GET ORDER BY ID  (Required for OrderSuccessPage refresh)
+   ============================================================ */
+export const getOrderByIdAsync = createAsyncThunk(
+    "orders/getOrderByIdAsync",
+    async (id) => {
+        const order = await getOrderById(id);
+        return order;
+    }
+);
+
+/* ============================================================
    UPDATE ORDER (ADMIN)
    ============================================================ */
 export const updateOrderByIdAsync = createAsyncThunk(
@@ -86,7 +98,7 @@ export const updateOrderByIdAsync = createAsyncThunk(
    ============================================================ */
 const orderSlice = createSlice({
     name: 'orderSlice',
-    initialState: initialState,
+    initialState,
     reducers: {
         resetCurrentOrder: (state) => {
             state.currentOrder = null;
@@ -100,7 +112,9 @@ const orderSlice = createSlice({
     },
     extraReducers: (builder) => {
 
-        /* ========== COD ORDER ========== */
+        /* ======================================================
+           CREATE COD ORDER
+           ====================================================== */
         builder
             .addCase(createOrderAsync.pending, (state) => {
                 state.status = 'pending';
@@ -115,7 +129,25 @@ const orderSlice = createSlice({
                 state.errors = action.error;
             });
 
-        /* ========== RAZORPAY CREATE ORDER ========== */
+        /* ======================================================
+           GET ORDER BY ID (for OrderSuccessPage)
+           ====================================================== */
+        builder
+            .addCase(getOrderByIdAsync.pending, (state) => {
+                state.orderFetchStatus = "pending";
+            })
+            .addCase(getOrderByIdAsync.fulfilled, (state, action) => {
+                state.orderFetchStatus = "fulfilled";
+                state.currentOrder = action.payload;
+            })
+            .addCase(getOrderByIdAsync.rejected, (state, action) => {
+                state.orderFetchStatus = "rejected";
+                state.errors = action.error;
+            });
+
+        /* ======================================================
+           RAZORPAY — CREATE ORDER
+           ====================================================== */
         builder
             .addCase(createRazorpayOrderAsync.pending, (state) => {
                 state.status = "pending";
@@ -129,7 +161,9 @@ const orderSlice = createSlice({
                 state.errors = action.error;
             });
 
-        /* ========== RAZORPAY VERIFY PAYMENT ========== */
+        /* ======================================================
+           RAZORPAY — VERIFY PAYMENT
+           ====================================================== */
         builder
             .addCase(verifyRazorpayPaymentAsync.pending, (state) => {
                 state.status = "pending";
@@ -144,7 +178,9 @@ const orderSlice = createSlice({
                 state.errors = action.error;
             });
 
-        /* ========== ADMIN FETCH ========== */
+        /* ======================================================
+           ADMIN — FETCH ALL ORDERS
+           ====================================================== */
         builder
             .addCase(getAllOrdersAsync.pending, (state) => {
                 state.orderFetchStatus = 'pending';
@@ -158,7 +194,9 @@ const orderSlice = createSlice({
                 state.errors = action.error;
             });
 
-        /* ========== USER ORDERS ========== */
+        /* ======================================================
+           USER — FETCH ORDERS
+           ====================================================== */
         builder
             .addCase(getOrderByUserIdAsync.pending, (state) => {
                 state.orderFetchStatus = 'pending';
@@ -172,7 +210,9 @@ const orderSlice = createSlice({
                 state.errors = action.error;
             });
 
-        /* ========== ADMIN UPDATE ========== */
+        /* ======================================================
+           UPDATE ORDER (ADMIN)
+           ====================================================== */
         builder
             .addCase(updateOrderByIdAsync.pending, (state) => {
                 state.orderUpdateStatus = 'pending';
@@ -182,7 +222,9 @@ const orderSlice = createSlice({
                 const index = state.orders.findIndex(
                     (o) => o._id === action.payload._id
                 );
-                state.orders[index] = action.payload;
+                if (index !== -1) {
+                    state.orders[index] = action.payload;
+                }
             })
             .addCase(updateOrderByIdAsync.rejected, (state, action) => {
                 state.orderUpdateStatus = 'rejected';

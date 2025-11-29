@@ -251,13 +251,28 @@ export const Navbar = () => {
                 {/* -------------------------- RIGHT SIDE ICONS -------------------------- */}
                 {!loggedInUser?.isAdmin && (
                     <Stack direction="row" spacing={isMobile ? 1 : 2} alignItems="center">
-                        <IconButton component={Link} to="/wishlist" sx={{ color: "#000" }}>
+
+                        {/* Wishlist */}
+                        <IconButton
+                            onClick={() => {
+                                if (!loggedInUser) return navigate("/login");
+                                navigate("/wishlist");
+                            }}
+                            sx={{ color: "#000" }}
+                        >
                             <Badge badgeContent={wishlistItems?.length} color="error">
                                 <FavoriteBorderIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
                             </Badge>
                         </IconButton>
 
-                        <IconButton onClick={() => navigate("/cart")} sx={{ color: "#000" }}>
+                        {/* Cart */}
+                        <IconButton
+                            onClick={() => {
+                                if (!loggedInUser) return navigate("/login");
+                                navigate("/cart");
+                            }}
+                            sx={{ color: "#000" }}
+                        >
                             <Badge badgeContent={cartItems?.length} color="error">
                                 <ShoppingCartOutlinedIcon sx={{ fontSize: isMobile ? 20 : 24 }} />
                             </Badge>
@@ -265,7 +280,12 @@ export const Navbar = () => {
 
                         {/* Avatar */}
                         <Tooltip title="Account">
-                            <IconButton onClick={(e) => setAnchorElUser(e.currentTarget)}>
+                            <IconButton
+                                onClick={(e) => {
+                                    if (!loggedInUser) return navigate("/login");
+                                    setAnchorElUser(e.currentTarget);
+                                }}
+                            >
                                 <Avatar
                                     sx={{
                                         width: isMobile ? 30 : 36,

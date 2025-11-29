@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Box,
     Stack,
@@ -190,6 +191,7 @@ const ModernPagination = ({ currentPage, totalPages, onPageChange }) => {
 
 
 export const ProductList = () => {
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -263,7 +265,7 @@ export const ProductList = () => {
             sort,
         };
         if (searchTerm.trim()) payload.search = searchTerm.trim();
-        if (!loggedInUser?.isAdmin) payload.user = true;
+
 
         dispatch(fetchProductsAsync(payload));
     }, [urlSearch, urlSort, urlPage, urlBrands.join(","), urlCategories.join(","), debouncedMobileSearch]);
@@ -352,13 +354,18 @@ export const ProductList = () => {
     };
 
     const handleWishlistToggle = (e, productId) => {
+        if (!loggedInUser) {
+            return navigate("/login");
+        }
+
         if (e.target.checked) {
-            dispatch(createWishlistItemAsync({ user: loggedInUser?._id, product: productId }));
+            dispatch(createWishlistItemAsync({ user: loggedInUser._id, product: productId }));
         } else {
             const idx = wishlistItems.findIndex((i) => i.product._id === productId);
             if (idx !== -1) dispatch(deleteWishlistItemByIdAsync(wishlistItems[idx]._id));
         }
     };
+
 
     const activeFilterCount = selectedBrands.length + selectedCategories.length;
     const showNoResults = fetchStatus === "fulfilled" && visibleProducts.length === 0;

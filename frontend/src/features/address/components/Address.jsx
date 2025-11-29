@@ -118,10 +118,10 @@ export const Address = ({id,type,street,postalCode,country,phoneNumber,state,cit
                             </Stack>
                         ):(
                             <>
-                                <Typography>Street - {street}</Typography>
-                                <Typography>Postal Code- {postalCode}</Typography>
+                                <Typography>Address - {street}</Typography>
+                                <Typography>Pincode- {postalCode}</Typography>
                                 <Typography>Country - {country}</Typography>
-                                <Typography>Phone Number - {phoneNumber}</Typography>
+                                <Typography>Phone - {phoneNumber}</Typography>
                                 <Typography>State - {state}</Typography>
                                 <Typography>City - {city}</Typography>
                             </>

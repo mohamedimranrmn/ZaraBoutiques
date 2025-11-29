@@ -148,10 +148,10 @@ export const UserOrders = () => {
 
         // Payment filter
         if (paymentFilter !== 'All') {
-            if (paymentFilter === 'PAID') {
-                filtered = filtered.filter(order => order.paymentStatus === 'PAID')
-            } else if (paymentFilter === 'PENDING') {
-                filtered = filtered.filter(order => order.paymentStatus !== 'PAID')
+            if (paymentFilter === "PAID") {
+                filtered = filtered.filter(order => order.paymentStatus === "PAID");
+            } else if (paymentFilter === "PENDING") {
+                filtered = filtered.filter(order => order.paymentStatus === "PENDING");
             }
         }
 
@@ -274,9 +274,16 @@ export const UserOrders = () => {
                             </Typography>
                             <Stack spacing={2}>
                                 {selectedOrder.item?.map((item, idx) => {
-                                    const p = item.product || {}
-                                    const imageSrc = (Array.isArray(p.images) && p.images[0]) || p.thumbnail || ''
-                                    const brandName = typeof p.brand === 'object' ? p.brand?.name : p.brand || ''
+                                    const p = item.product || {};
+
+                                    const imageSrc =
+                                        Array.isArray(p.images) && p.images[0]
+                                            ? p.images[0]
+                                            : p.thumbnail || "/placeholder.png";
+
+                                    const brandName =
+                                        typeof p.brand === "object" ? p.brand?.name : p.brand || "Unknown brand";
+
                                     const isInCart = p?._id && cartItems.some(ci => ci.product._id === p._id)
 
                                     return (
@@ -357,12 +364,19 @@ export const UserOrders = () => {
                                                                 </Button>
                                                             ) : (
                                                                 <Button
-                                                                    onClick={() => p?._id && handleAddToCart(p, item.size)}
-                                                                    variant="contained"
-                                                                    size="small"
-                                                                    disabled={!p?._id}
+                                                                    disabled={!p?._id || p.stockQuantity <= 0}
+                                                                    onClick={() => {
+                                                                        if (!p?._id) return;
+                                                                        if (p.stockQuantity <= 0) {
+                                                                            toast.error("Product is no longer in stock");
+                                                                            return;
+                                                                        }
+                                                                        handleAddToCart(p, item.size);
+                                                                    }}
                                                                 >
-                                                                    Buy Again
+                                                                    { !p?._id ? "Unavailable" :
+                                                                        p.stockQuantity <= 0 ? "Out of Stock" :
+                                                                            "Buy Again" }
                                                                 </Button>
                                                             )}
                                                         </Stack>
