@@ -159,16 +159,6 @@ export const Navbar = () => {
                     >
                         {isMobile ? (
                             <>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.8rem",
-                                        fontWeight: 600,
-                                        whiteSpace: "nowrap",
-                                        color: "#333"
-                                    }}
-                                >
-                                    Admin Panel
-                                </Typography>
                                 <Button
                                     component={Link}
                                     to="/logout"
