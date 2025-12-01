@@ -13,66 +13,84 @@ import Favorite from "@mui/icons-material/Favorite";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { selectCartItems, addToCartAsync } from "../../cart/CartSlice";
 import { selectWishlistItems } from "../../wishlist/WishlistSlice";
+import { selectCartItems, addToCartAsync } from "../../cart/CartSlice";
 import { selectLoggedInUser } from "../../auth/AuthSlice";
 
 export const ProductCard = ({
                                 id,
                                 title,
-                                price,                  // discounted price
-                                originalPrice = null,   // original MRP
+                                price,              // discounted price
+                                originalPrice = null,
                                 discountPercentage = 0,
                                 thumbnail,
                                 brand,
+                                handleAddRemoveFromWishlist,
                                 isWishlistCard = false,
-                                isAdminCard = false,
-                                handleAddRemoveFromWishlist
+                                isAdminCard = false
                             }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-    const cartItems = useSelector(selectCartItems);
     const wishlistItems = useSelector(selectWishlistItems);
+    const cartItems = useSelector(selectCartItems);
     const loggedInUser = useSelector(selectLoggedInUser);
 
-    const inCart = cartItems.some((i) => i.product._id === id);
-    const inWishlist = wishlistItems.some((i) => i.product._id === id);
-
-    const showOriginal =
-        originalPrice &&
-        originalPrice > price;      // IMPORTANT FIX
-
-    const showDiscount =
-        discountPercentage &&
-        discountPercentage > 0;     // IMPORTANT FIX
+    const isInWishlist = wishlistItems.some((item) => item.product._id === id);
+    const isInCart = cartItems.some((item) => item.product._id === id);
 
     const addToCart = (e) => {
         e.stopPropagation();
-        if (!loggedInUser) return navigate("/login");
-        dispatch(addToCartAsync({ user: loggedInUser._id, product: id }));
+
+        if (!loggedInUser) {
+            navigate("/login");
+            return;
+        }
+
+        // Always redirect to product details for proper add-to-cart flow
+        navigate(`/product-details/${id}`);
     };
+
+
+
+    const buyNow = (e) => {
+        e.stopPropagation();
+        navigate("/checkout", {
+            state: {
+                buyNow: true,
+                product: {
+                    _id: id,
+                    title,
+                    price,
+                    thumbnail,
+                    brand,
+                    quantity: 1,
+                }
+            }
+        });
+    };
+
+    const showOriginal = originalPrice && originalPrice > price;
+    const showDiscount = discountPercentage > 0;
 
     return (
         <Paper
             elevation={1}
             component={motion.div}
             whileHover={{ scale: 1.01 }}
-            onClick={() => navigate(`/product-details/${id}`)}
             sx={{
                 width: "100%",
                 borderRadius: 2,
-                overflow: "hidden",
                 p: 1.25,
                 cursor: "pointer",
+                position: "relative",
                 display: "flex",
-                flexDirection: "column",
-                position: "relative"
+                flexDirection: "column"
             }}
+            onClick={() => navigate(`/product-details/${id}`)}
         >
-
             {/* Discount Badge */}
             {showDiscount && (
                 <Box sx={{
@@ -92,7 +110,7 @@ export const ProductCard = ({
                 </Box>
             )}
 
-            {/* IMAGE */}
+            {/* Image */}
             <Box
                 sx={{
                     width: "100%",
@@ -126,8 +144,7 @@ export const ProductCard = ({
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        width: "100%",
-                        lineHeight: 1.3
+                        width: "100%"
                     }}
                 >
                     {title}
@@ -135,7 +152,7 @@ export const ProductCard = ({
 
                 {!isAdminCard && (
                     <Checkbox
-                        checked={inWishlist}
+                        checked={isInWishlist}
                         icon={<FavoriteBorder />}
                         checkedIcon={<Favorite sx={{ color: "red" }} />}
                         onClick={(e) => e.stopPropagation()}
@@ -150,7 +167,7 @@ export const ProductCard = ({
                 {brand}
             </Typography>
 
-            {/* Price Row */}
+            {/* Price */}
             <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
                 <Typography variant="h6" fontWeight={700}>
                     ₹{price}
@@ -167,25 +184,47 @@ export const ProductCard = ({
                 )}
             </Stack>
 
-            {/* Add to cart */}
+            {/* BUTTON (CRITICAL LOGIC) */}
             {!isWishlistCard && !isAdminCard && (
-                <Button
-                    variant="contained"
-                    onClick={addToCart}
-                    sx={{
-                        mt: 1,
-                        py: 1,
-                        borderRadius: 2,
-                        bgcolor: "black",
-                        color: "white",
-                        fontWeight: 700,
-                        textTransform: "none",
-                        fontSize: "0.85rem",
-                        "&:hover": { bgcolor: "grey.900" }
-                    }}
-                >
-                    {inCart ? "Go to Cart" : "Add to Cart"}
-                </Button>
+                isInCart ? (
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/product-details/${id}`);
+                        }}
+                        sx={{
+                            mt: 1,
+                            py: 0.75,              // smaller height
+                            fontSize: "0.8rem",    // smaller text
+                            fontWeight: 600,
+                            textTransform: "none",
+                            borderRadius: 1.2,
+                            minHeight: 36,         // enforce single-line button
+                        }}
+
+                    >
+                        Buy Now
+                    </Button>
+                ) : (
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        onClick={addToCart}
+                        sx={{
+                            mt: 1,
+                            py: 0.75,              // smaller height
+                            fontSize: "0.8rem",    // smaller text
+                            fontWeight: 600,
+                            textTransform: "none",
+                            borderRadius: 1.2,
+                            minHeight: 36,         // enforce single-line button
+                        }}
+                    >
+                        Add to Cart
+                    </Button>
+                )
             )}
         </Paper>
     );

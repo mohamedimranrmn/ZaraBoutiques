@@ -495,6 +495,8 @@ export const ProductList = () => {
                                     <ProductCard
                                         id={p._id}
                                         title={p.title}
+                                        sizes={p.sizes}
+                                        requiresSize={p.sizes?.length > 0}
                                         price={p.discountedPrice !== undefined ? p.discountedPrice : p.price}
                                         originalPrice={
                                             p.discountPercentage > 0

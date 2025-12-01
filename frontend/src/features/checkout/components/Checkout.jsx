@@ -11,11 +11,14 @@ import {
     Box,
     Chip,
     Card,
-    CardContent,
     useTheme,
     useMediaQuery,
     alpha,
-    Container
+    Container,
+    Radio,
+    RadioGroup,
+    FormControlLabel,
+    Collapse
 } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
 import React, {
@@ -38,16 +41,16 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import HomeIcon from '@mui/icons-material/Home'
 import WorkIcon from '@mui/icons-material/Work'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
-import LocalShippingIcon from '@mui/icons-material/LocalShipping'
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag'
+import AddIcon from '@mui/icons-material/Add'
 import LockIcon from '@mui/icons-material/Lock'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { SHIPPING, TAXES } from '../../../constants'
-import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { axiosi } from '../../../config/axios'
-import PaymentSuccessDialog from '../../../dialogs/PaymentSuccessDialog';
+import PaymentSuccessDialog from '../../../dialogs/PaymentSuccessDialog'
 
-// Load Razorpay script once (same as before)
 const loadRazorpayScript = () => {
     return new Promise((resolve) => {
         if (window.Razorpay) {
@@ -79,61 +82,56 @@ export const Checkout = () => {
     const [selectedAddressId, setSelectedAddressId] = useState(null)
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [isOnlinePaying, setIsOnlinePaying] = useState(false)
+    const [expandSummary, setExpandSummary] = useState(false)
 
     const [showSuccessAnimation, setShowSuccessAnimation] = useState({
         open: false,
         orderId: null
-    });
+    })
 
-    // Data from cart or Buy-Now
     const passedSelectedItems = location.state?.selectedItems || null
     const buyNowItem = location.state?.buyNow ? location.state?.product : null
 
-    // If buyNowItem exists, it should already have price set (ProductDetails pushes discounted price)
     const formattedBuyNowItem = buyNowItem
         ? [{
             cartItemId: null,
             product: {
                 _id: buyNowItem._id,
                 title: buyNowItem.title,
-                price: buyNowItem.price, // should be discounted price
+                price: buyNowItem.price,
                 thumbnail: buyNowItem.thumbnail,
                 brand: { name: buyNowItem.brand }
             },
             quantity: buyNowItem.quantity,
             size: buyNowItem.size || null,
-            price: buyNowItem.price // store price at top-level for easier usage
+            price: buyNowItem.price
         }]
         : null
 
-    // Items to checkout: include price (cart item price if present)
     const itemsToCheckout = useMemo(() => {
-        if (formattedBuyNowItem) return formattedBuyNowItem;
-        if (passedSelectedItems?.length) return passedSelectedItems;
+        if (formattedBuyNowItem) return formattedBuyNowItem
+        if (passedSelectedItems?.length) return passedSelectedItems
         return cartItems.map(ci => ({
             cartItemId: ci._id,
             product: ci.product,
             quantity: ci.quantity,
             size: ci.size || null,
             price: (typeof ci.price === 'number' ? ci.price : (ci.product?.price ?? 0))
-        }));
-    }, [passedSelectedItems, cartItems, formattedBuyNowItem]);
+        }))
+    }, [passedSelectedItems, cartItems, formattedBuyNowItem])
 
     const hasInvalidItems = useMemo(() =>
             itemsToCheckout.some(it => !it.product || !it.product._id || typeof (it.price ?? it.product.price) !== 'number'),
         [itemsToCheckout]
-    );
+    )
 
-    // Totals: use item.price (cart-stored price or buy-now price) first
     const orderSubtotal = useMemo(() => itemsToCheckout.reduce((acc, item) => {
-        if (!item.product || typeof (item.price ?? item.product.price) !== 'number') return acc;
-        const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price)) ? item.price : item.product.price;
-        return acc + (unitPrice * item.quantity);
-    }, 0), [itemsToCheckout]);
+        if (!item.product || typeof (item.price ?? item.product.price) !== 'number') return acc
+        const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price)) ? item.price : item.product.price
+        return acc + (unitPrice * item.quantity)
+    }, 0), [itemsToCheckout])
 
-    const orderTotal = orderSubtotal + SHIPPING + TAXES;
-
-    // ... rest of the component mostly unchanged, but update any local lineTotals/display to use item.price if present
+    const orderTotal = orderSubtotal + SHIPPING + TAXES
 
     useEffect(() => {
         if (addresses.length > 0 && !selectedAddressId) {
@@ -165,8 +163,7 @@ export const Checkout = () => {
     const finalizeCartAfterOrder = useCallback(
         async (orderId) => {
             try {
-                const onlySelected = passedSelectedItems || null;
-
+                const onlySelected = passedSelectedItems || null
                 if (onlySelected) {
                     await Promise.all(
                         onlySelected
@@ -174,17 +171,16 @@ export const Checkout = () => {
                             .map(ci =>
                                 dispatch(deleteCartItemByIdAsync(ci.cartItemId)).unwrap()
                             )
-                    );
+                    )
                 } else if (!formattedBuyNowItem && loggedInUser?._id) {
-                    await dispatch(resetCartByUserIdAsync(loggedInUser._id)).unwrap();
+                    await dispatch(resetCartByUserIdAsync(loggedInUser._id)).unwrap()
                 }
-
             } catch (err) {
-                // nothing to do here
+                // Error handling
             }
         },
         [dispatch, passedSelectedItems, formattedBuyNowItem, loggedInUser]
-    );
+    )
 
     const handleAddAddress = (data) => {
         if (!loggedInUser?._id) {
@@ -194,7 +190,6 @@ export const Checkout = () => {
         dispatch(addAddressAsync({ ...data, user: loggedInUser._id }))
     }
 
-    // Payment flow: build payload using frontend-calculated subtotal (which uses item.price)
     const handleRazorpayPayment = async () => {
         try {
             if (!loggedInUser?._id) {
@@ -223,7 +218,6 @@ export const Checkout = () => {
 
             setIsOnlinePaying(true)
 
-            // Build order items payload: product id + qty + size + unit price (so backend can verify)
             const orderItemsPayload = itemsToCheckout.map(it => ({
                 product: { _id: it.product._id },
                 quantity: it.quantity,
@@ -274,18 +268,17 @@ export const Checkout = () => {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
                             orderId: data.orderId
-                        });
+                        })
 
-                        setIsOnlinePaying(false);
+                        setIsOnlinePaying(false)
                         setShowSuccessAnimation({
                             open: true,
                             orderId: data.orderId
-                        });
-
+                        })
                     } catch (err) {
-                        console.error(err);
-                        toast.error('Payment verification failed. If amount is debited, please contact support.');
-                        setIsOnlinePaying(false);
+                        console.error(err)
+                        toast.error('Payment verification failed. If amount is debited, please contact support.')
+                        setIsOnlinePaying(false)
                     }
                 },
                 modal: {
@@ -310,17 +303,17 @@ export const Checkout = () => {
 
     const handleViewOrder = (orderId) => {
         if (!orderId) {
-            toast.error("Order ID missing");
-            return;
+            toast.error("Order ID missing")
+            return
         }
 
-        navigate(`/order-success/${orderId}`);
+        navigate(`/order-success/${orderId}`)
 
         setTimeout(() => {
-            finalizeCartAfterOrder(orderId);
-            setShowSuccessAnimation({ open: false, orderId: null });
-        }, 50);
-    };
+            finalizeCartAfterOrder(orderId)
+            setShowSuccessAnimation({ open: false, orderId: null })
+        }, 50)
+    }
 
     const handlePayClick = () => {
         if (!selectedAddress) {
@@ -356,1176 +349,404 @@ export const Checkout = () => {
         return <LocationOnIcon fontSize="small" />
     }
 
-    const handleResetForm = () => {
-        reset()
-        setShowAddressForm(false)
-    }
-
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                bgcolor: isMobile ? alpha(theme.palette.grey[50], 0.5) : 'white'
-            }}
-        >
-            {/* Desktop: Top Bar with Back Button and Title */}
-            {!isMobile && (
-                <Box
-                    sx={{
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        bgcolor: 'white',
-                        py: 2.5
-                    }}
-                >
-                    <Container maxWidth="lg">
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
-                            <Stack direction="row" alignItems="center" gap={2}>
-                                <IconButton
-                                    component={Link}
-                                    to="/cart"
-                                    sx={{
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        '&:hover': {
-                                            bgcolor: alpha(theme.palette.grey[100], 0.5),
-                                            transform: 'translateX(-3px)'
-                                        },
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <ArrowBackIcon />
-                                </IconButton>
-                                <Box>
-                                    <Typography variant="h5" fontWeight={700}>
-                                        Secure Checkout
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Review your order and complete payment
-                                    </Typography>
-                                </Box>
-                            </Stack>
-                        </Stack>
-                    </Container>
-                </Box>
-            )}
-
-            {/* Mobile: Header */}
-            {isMobile && (
-                <Box sx={{ px: 2, pt: 2 }}>
-                    <motion.div
-                        initial={{ opacity: 0, y: -16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <Stack direction="row" alignItems="center" gap={1.25}>
-                            <IconButton
-                                component={Link}
-                                to="/cart"
-                                sx={{
-                                    bgcolor: 'white',
-                                    boxShadow: 1,
-                                    '&:hover': {
-                                        bgcolor: 'white',
-                                        transform: 'translateX(-3px)',
-                                        boxShadow: 2
-                                    },
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <ArrowBackIcon fontSize="small" />
-                            </IconButton>
-                            <Box>
-                                <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.3px' }}>
-                                    Checkout
+        <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
+            {/* Header */}
+            <Box
+                sx={{
+                    bgcolor: 'white',
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    py: { xs: 1.5, md: 2 },
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100
+                }}
+            >
+                <Container maxWidth="lg">
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                        <IconButton
+                            component={Link}
+                            to="/cart"
+                            size={isMobile ? 'small' : 'medium'}
+                        >
+                            <ArrowBackIcon />
+                        </IconButton>
+                        <Box>
+                            <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700}>
+                                Checkout
+                            </Typography>
+                            {!isMobile && (
+                                <Typography variant="caption" color="text.secondary">
+                                    Complete your purchase securely
                                 </Typography>
-                            </Box>
-                        </Stack>
-                    </motion.div>
-                </Box>
-            )}
+                            )}
+                        </Box>
+                    </Stack>
+                </Container>
+            </Box>
 
-            <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-                {isMobile ? (
-                    /* Mobile Layout */
-                    <Grid container spacing={2.5}>
-                        {/* Address */}
-                        <Grid item xs={12}>
-                            <Stack gap={2}>
-                                <motion.div
-                                    initial={{ opacity: 0, x: -12 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.25, delay: 0.05 }}
+            <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
+                <Grid container spacing={{ xs: 2, md: 3 }}>
+                    {/* Main Content */}
+                    <Grid item xs={12} md={7} lg={8}>
+                        <Stack spacing={2}>
+                            {/* Delivery Address */}
+                            <Paper sx={{ p: { xs: 2, md: 3 } }}>
+                                <Typography variant="h6" fontWeight={600} gutterBottom>
+                                    Delivery Address
+                                </Typography>
+
+                                <RadioGroup
+                                    value={selectedAddressId}
+                                    onChange={(e) => setSelectedAddressId(e.target.value)}
                                 >
-                                    <Card
-                                        elevation={0}
-                                        sx={{
-                                            border: '1px solid',
-                                            borderColor: 'divider',
-                                            borderRadius: 2
-                                        }}
-                                    >
-                                        <CardContent sx={{ p: 2 }}>
-                                            <Stack gap={2}>
-                                                <Stack direction="row" alignItems="center" gap={1.25}>
-                                                    <Box
-                                                        sx={{
-                                                            width: 32,
-                                                            height: 32,
-                                                            borderRadius: 1.5,
-                                                            bgcolor: alpha(theme.palette.primary.main, 0.08),
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                    >
-                                                        <LocalShippingIcon fontSize="small" color="primary" />
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography variant="subtitle1" fontWeight={600}>
-                                                            Delivery Address
+                                    <Stack spacing={1.5}>
+                                        {addresses.map((address) => (
+                                            <Paper
+                                                key={address._id}
+                                                variant="outlined"
+                                                sx={{
+                                                    p: 2,
+                                                    cursor: 'pointer',
+                                                    border: '2px solid',
+                                                    borderColor: selectedAddressId === address._id
+                                                        ? 'primary.main'
+                                                        : 'divider',
+                                                    bgcolor: selectedAddressId === address._id
+                                                        ? alpha(theme.palette.primary.main, 0.04)
+                                                        : 'transparent',
+                                                    '&:hover': {
+                                                        borderColor: 'primary.main'
+                                                    }
+                                                }}
+                                                onClick={() => setSelectedAddressId(address._id)}
+                                            >
+                                                <Stack direction="row" spacing={2}>
+                                                    <Radio
+                                                        checked={selectedAddressId === address._id}
+                                                        value={address._id}
+                                                    />
+                                                    <Box flex={1}>
+                                                        <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                                                            <Chip
+                                                                icon={getAddressIcon(address.type)}
+                                                                label={address.type}
+                                                                size="small"
+                                                                color={selectedAddressId === address._id ? 'primary' : 'default'}
+                                                            />
+                                                        </Stack>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {address.street}
                                                         </Typography>
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {addresses.length} saved address
-                                                            {addresses.length !== 1 ? 'es' : ''}
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {address.city}, {address.state} {address.postalCode}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {address.country}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                                            Phone: {address.phoneNumber}
                                                         </Typography>
                                                     </Box>
                                                 </Stack>
+                                            </Paper>
+                                        ))}
+                                    </Stack>
+                                </RadioGroup>
 
-                                                {addresses.length > 0 && (
-                                                    <Stack spacing={1.5}>
-                                                        {addresses.map(address => (
-                                                            <Paper
-                                                                key={address._id}
-                                                                elevation={0}
-                                                                onClick={() => setSelectedAddressId(address._id)}
-                                                                sx={{
-                                                                    p: 1.5,
-                                                                    cursor: 'pointer',
-                                                                    border: '1.5px solid',
-                                                                    borderColor: selectedAddressId === address._id
-                                                                        ? 'primary.main'
-                                                                        : 'divider',
-                                                                    bgcolor: selectedAddressId === address._id
-                                                                        ? alpha(theme.palette.primary.main, 0.03)
-                                                                        : 'white',
-                                                                    borderRadius: 1.5,
-                                                                    transition: 'all 0.2s',
-                                                                    '&:hover': {
-                                                                        borderColor: 'primary.main',
-                                                                        boxShadow: 1
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Stack gap={1}>
-                                                                    <Stack
-                                                                        direction="row"
-                                                                        alignItems="center"
-                                                                        justifyContent="space-between"
-                                                                    >
-                                                                        <Chip
-                                                                            icon={getAddressIcon(address.type)}
-                                                                            label={address.type}
-                                                                            size="small"
-                                                                            color={selectedAddressId === address._id ? 'primary' : 'default'}
-                                                                            sx={{ fontWeight: 500, height: 22 }}
-                                                                        />
-                                                                        <Box
-                                                                            sx={{
-                                                                                width: 14,
-                                                                                height: 14,
-                                                                                borderRadius: '50%',
-                                                                                border: '2px solid',
-                                                                                borderColor: selectedAddressId === address._id
-                                                                                    ? 'primary.main'
-                                                                                    : 'divider',
-                                                                                bgcolor: selectedAddressId === address._id
-                                                                                    ? 'primary.main'
-                                                                                    : 'transparent'
-                                                                            }}
-                                                                        />
-                                                                    </Stack>
+                                {!showAddressForm && (
+                                    <Button
+                                        startIcon={<AddIcon />}
+                                        onClick={() => setShowAddressForm(true)}
+                                        sx={{ mt: 2, textTransform: 'none' }}
+                                    >
+                                        Add New Address
+                                    </Button>
+                                )}
 
-                                                                    <Box>
-                                                                        <Typography variant="body2" fontWeight={500}>
-                                                                            {address.street}
-                                                                        </Typography>
-                                                                        <Typography variant="body2" color="text.secondary">
-                                                                            {address.city}, {address.state}
-                                                                        </Typography>
-                                                                        <Typography variant="body2" color="text.secondary">
-                                                                            {address.country} - {address.postalCode}
-                                                                        </Typography>
-                                                                        <Typography
-                                                                            variant="caption"
-                                                                            color="text.secondary"
-                                                                            sx={{ mt: 0.5, display: 'block' }}
-                                                                        >
-                                                                            📞 {address.phoneNumber}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                </Stack>
-                                                            </Paper>
-                                                        ))}
-                                                    </Stack>
-                                                )}
-
-                                                {!showAddressForm && (
-                                                    <Button
-                                                        variant="text"
-                                                        color="primary"
-                                                        onClick={() => setShowAddressForm(true)}
-                                                        sx={{
-                                                            alignSelf: 'center',
-                                                            textTransform: 'none',
-                                                            fontSize: '0.8rem',
-                                                            px: 1,
-                                                            minHeight: 0
-                                                        }}
-                                                    >
-                                                        + Add New Address
-                                                    </Button>
-                                                )}
-
-                                                {showAddressForm && (
-                                                    <Box
-                                                        component="form"
-                                                        onSubmit={handleSubmit(handleAddAddress)}
-                                                        sx={{
-                                                            p: 2,
-                                                            bgcolor: alpha(theme.palette.grey[100], 0.7),
-                                                            borderRadius: 1.5,
-                                                            border: '1px dashed',
-                                                            borderColor: 'divider'
-                                                        }}
-                                                    >
-                                                        <Stack gap={1.5}>
-                                                            <Grid container spacing={1.5}>
-                                                                <Grid item xs={12} sm={6}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="Address Type"
-                                                                        placeholder="Home, Office..."
-                                                                        error={!!errors.type}
-                                                                        helperText={errors.type && 'Required'}
-                                                                        {...register('type', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={6}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="Phone Number"
-                                                                        error={!!errors.phoneNumber}
-                                                                        helperText={errors.phoneNumber && 'Required'}
-                                                                        {...register('phoneNumber', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="Street Address"
-                                                                        error={!!errors.street}
-                                                                        helperText={errors.street && 'Required'}
-                                                                        {...register('street', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={4}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="City"
-                                                                        error={!!errors.city}
-                                                                        helperText={errors.city && 'Required'}
-                                                                        {...register('city', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={4}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="State"
-                                                                        error={!!errors.state}
-                                                                        helperText={errors.state && 'Required'}
-                                                                        {...register('state', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={4}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="Postal Code"
-                                                                        error={!!errors.postalCode}
-                                                                        helperText={errors.postalCode && 'Required'}
-                                                                        {...register('postalCode', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        size="small"
-                                                                        label="Country"
-                                                                        error={!!errors.country}
-                                                                        helperText={errors.country && 'Required'}
-                                                                        {...register('country', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                            </Grid>
-
-                                                            <Stack direction="row" gap={1} justifyContent="flex-end">
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    onClick={handleResetForm}
-                                                                    sx={{
-                                                                        textTransform: 'none',
-                                                                        px: 3,
-                                                                        py: 0.75,
-                                                                        borderRadius: 1.5,
-                                                                        fontSize: '0.85rem'
-                                                                    }}
-                                                                >
-                                                                    Reset
-                                                                </Button>
-                                                                <LoadingButton
-                                                                    type="submit"
-                                                                    variant="contained"
-                                                                    loading={addressStatus === 'pending'}
-                                                                    sx={{
-                                                                        textTransform: 'none',
-                                                                        px: 3,
-                                                                        py: 0.75,
-                                                                        borderRadius: 1.5,
-                                                                        fontSize: '0.85rem'
-                                                                    }}
-                                                                >
-                                                                    Save
-                                                                </LoadingButton>
-                                                            </Stack>
-                                                        </Stack>
-                                                    </Box>
-                                                )}
-                                            </Stack>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            </Stack>
-                        </Grid>
-
-                        {/* Summary + Pay */}
-                        <Grid item xs={12}>
-                            <motion.div
-                                initial={{ opacity: 0, x: 12 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.25, delay: 0.05 }}
-                            >
-                                <Card
-                                    elevation={0}
-                                    sx={{
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 2
-                                    }}
-                                >
-                                    <CardContent sx={{ p: 2 }}>
-                                        <Stack gap={2}>
-                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                Order Summary
-                                            </Typography>
-
-                                            {/* Items */}
-                                            <Stack
-                                                gap={1.5}
-                                                sx={{ maxHeight: 260, overflowY: 'auto', pr: 0.5 }}
+                                <Collapse in={showAddressForm}>
+                                    <Box
+                                        component="form"
+                                        onSubmit={handleSubmit(handleAddAddress)}
+                                        sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}
+                                    >
+                                        <Typography variant="subtitle2" fontWeight={600} mb={2}>
+                                            New Address
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="Address Type"
+                                                    error={!!errors.type}
+                                                    helperText={errors.type && 'Required'}
+                                                    {...register('type', { required: true })}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="Phone Number"
+                                                    error={!!errors.phoneNumber}
+                                                    helperText={errors.phoneNumber && 'Required'}
+                                                    {...register('phoneNumber', { required: true })}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="Street Address"
+                                                    error={!!errors.street}
+                                                    helperText={errors.street && 'Required'}
+                                                    {...register('street', { required: true })}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="City"
+                                                    error={!!errors.city}
+                                                    helperText={errors.city && 'Required'}
+                                                    {...register('city', { required: true })}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="State"
+                                                    error={!!errors.state}
+                                                    helperText={errors.state && 'Required'}
+                                                    {...register('state', { required: true })}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="Postal Code"
+                                                    error={!!errors.postalCode}
+                                                    helperText={errors.postalCode && 'Required'}
+                                                    {...register('postalCode', { required: true })}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    label="Country"
+                                                    error={!!errors.country}
+                                                    helperText={errors.country && 'Required'}
+                                                    {...register('country', { required: true })}
+                                                />
+                                            </Grid>
+                                        </Grid>
+                                        <Stack direction="row" spacing={1} mt={2} justifyContent="flex-end">
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => {
+                                                    reset()
+                                                    setShowAddressForm(false)
+                                                }}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    px: 2,
+                                                    py: 0.5,
+                                                    minWidth: 'auto'
+                                                }}
                                             >
+                                                Cancel
+                                            </Button>
+                                            <LoadingButton
+                                                type="submit"
+                                                variant="contained"
+                                                size="small"
+                                                loading={addressStatus === 'pending'}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    px: 2,
+                                                    py: 0.5,
+                                                    minWidth: 'auto'
+                                                }}
+                                            >
+                                                Save Address
+                                            </LoadingButton>
+                                        </Stack>
+                                    </Box>
+                                </Collapse>
+                            </Paper>
+                        </Stack>
+                    </Grid>
+
+                    {/* Order Summary Sidebar */}
+                    <Grid item xs={12} md={5} lg={4}>
+                        <Paper
+                            sx={{
+                                p: { xs: 2, md: 3 },
+                                position: { md: 'sticky' },
+                                top: { md: 80 }
+                            }}
+                        >
+                            <Stack spacing={2}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="h6" fontWeight={600}>
+                                        Order Summary
+                                    </Typography>
+                                    {isMobile && (
+                                        <IconButton size="small" onClick={() => setExpandSummary(!expandSummary)}>
+                                            {expandSummary ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                        </IconButton>
+                                    )}
+                                </Stack>
+
+                                <Collapse in={!isMobile || expandSummary}>
+                                    <Stack spacing={2}>
+                                        {/* Items */}
+                                        <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+                                            <Stack spacing={1.5}>
                                                 {itemsToCheckout.map((item, idx) => {
                                                     const product = item.product || null
-                                                    const isDeleted = !product || !product._id
                                                     const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price))
                                                         ? item.price
-                                                        : product?.price || 0;
-
-                                                    const lineTotal = unitPrice * item.quantity;
-
+                                                        : product?.price || 0
+                                                    const lineTotal = unitPrice * item.quantity
 
                                                     return (
-                                                        <Stack
-                                                            key={idx}
-                                                            direction="row"
-                                                            gap={1.5}
-                                                            sx={{
-                                                                p: 1,
-                                                                bgcolor: alpha(theme.palette.grey[100], 0.7),
-                                                                borderRadius: 1.5
-                                                            }}
-                                                        >
+                                                        <Stack key={idx} direction="row" spacing={1.5}>
                                                             <Box
                                                                 sx={{
-                                                                    width: 56,
-                                                                    height: 56,
-                                                                    flexShrink: 0,
-                                                                    borderRadius: 1.5,
+                                                                    width: 60,
+                                                                    height: 60,
+                                                                    borderRadius: 1,
                                                                     overflow: 'hidden',
-                                                                    bgcolor: 'white',
-                                                                    border: '1px solid',
-                                                                    borderColor: 'divider'
+                                                                    bgcolor: '#f5f5f5',
+                                                                    flexShrink: 0
                                                                 }}
                                                             >
                                                                 <img
                                                                     src={product?.thumbnail || "/placeholder.png"}
-                                                                    alt={product?.title || "Product removed"}
+                                                                    alt={product?.title || "Product"}
                                                                     style={{
                                                                         width: '100%',
                                                                         height: '100%',
-                                                                        objectFit: 'contain'
+                                                                        objectFit: 'cover'
                                                                     }}
                                                                 />
                                                             </Box>
-
-                                                            <Stack flex={1} justifyContent="space-between">
-                                                                <Box>
-                                                                    <Typography
-                                                                        variant="body2"
-                                                                        fontWeight={500}
-                                                                        sx={{
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            display: '-webkit-box',
-                                                                            WebkitLineClamp: 2,
-                                                                            WebkitBoxOrient: 'vertical'
-                                                                        }}
-                                                                    >
-                                                                        {product?.title || "Product no longer available"}
+                                                            <Box flex={1}>
+                                                                <Typography variant="body2" fontWeight={500} noWrap>
+                                                                    {product?.title || "Product"}
+                                                                </Typography>
+                                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        Qty: {item.quantity}
                                                                     </Typography>
-                                                                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                                                                        <Typography variant="caption" color="text.secondary">
-                                                                            Qty: {item.quantity}
-                                                                        </Typography>
-                                                                        {item.size && !isDeleted && (
-                                                                            <>
-                                                                                <Typography variant="caption" color="text.secondary">•</Typography>
-                                                                                <Chip
-                                                                                    label={`Size: ${item.size}`}
-                                                                                    size="small"
-                                                                                    sx={{
-                                                                                        height: 16,
-                                                                                        fontSize: '0.65rem',
-                                                                                        fontWeight: 600,
-                                                                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                                                                        color: 'primary.main'
-                                                                                    }}
-                                                                                />
-                                                                            </>
-                                                                        )}
-                                                                    </Stack>
-                                                                    {isDeleted && (
-                                                                        <Typography variant="caption" color="error.main">
-                                                                            This item is no longer available
-                                                                        </Typography>
+                                                                    {item.size && (
+                                                                        <>
+                                                                            <Typography variant="caption">•</Typography>
+                                                                            <Typography variant="caption" color="text.secondary">
+                                                                                Size: {item.size}
+                                                                            </Typography>
+                                                                        </>
                                                                     )}
-                                                                </Box>
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    fontWeight={600}
-                                                                    color="primary"
-                                                                >
+                                                                </Stack>
+                                                                <Typography variant="body2" fontWeight={600} color="primary">
                                                                     ₹{lineTotal.toFixed(2)}
                                                                 </Typography>
-                                                            </Stack>
+                                                            </Box>
                                                         </Stack>
                                                     )
                                                 })}
                                             </Stack>
+                                        </Box>
 
-                                            <Divider />
+                                        <Divider />
 
-                                            {/* Price Breakdown */}
-                                            <Stack gap={0.75} fontSize="0.9rem">
-                                                <Stack direction="row" justifyContent="space-between">
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        Subtotal
-                                                    </Typography>
-                                                    <Typography variant="body2" fontWeight={500}>
-                                                        ₹{orderSubtotal.toFixed(2)}
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack direction="row" justifyContent="space-between">
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        Shipping
-                                                    </Typography>
-                                                    <Typography variant="body2" fontWeight={500}>
-                                                        ₹{SHIPPING.toFixed(2)}
-                                                    </Typography>
-                                                </Stack>
-                                                <Stack direction="row" justifyContent="space-between">
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        Taxes
-                                                    </Typography>
-                                                    <Typography variant="body2" fontWeight={500}>
-                                                        ₹{TAXES.toFixed(2)}
-                                                    </Typography>
-                                                </Stack>
-                                            </Stack>
-
-                                            <Divider />
-
-                                            <Stack
-                                                direction="row"
-                                                justifyContent="space-between"
-                                                alignItems="center"
-                                                sx={{
-                                                    p: 1.25,
-                                                    bgcolor: alpha(theme.palette.primary.main, 0.07),
-                                                    borderRadius: 1.5
-                                                }}
-                                            >
-                                                <Typography variant="body1" fontWeight={600}>
-                                                    Total
+                                        {/* Price Breakdown */}
+                                        <Stack spacing={1}>
+                                            <Stack direction="row" justifyContent="space-between">
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Subtotal
                                                 </Typography>
-                                                <Typography
-                                                    variant="h6"
-                                                    fontWeight={700}
-                                                    color="primary.main"
-                                                    sx={{ fontSize: '1.1rem' }}
-                                                >
-                                                    ₹{orderTotal.toFixed(2)}
+                                                <Typography variant="body2">
+                                                    ₹{orderSubtotal.toFixed(2)}
                                                 </Typography>
                                             </Stack>
-
-                                            <LoadingButton
-                                                fullWidth
-                                                variant="contained"
-                                                loading={isOnlinePaying}
-                                                onClick={handlePayClick}
-                                                disabled={!selectedAddress || !itemsToCheckout.length || hasInvalidItems}
-                                                sx={{
-                                                    mt: 0.5,
-                                                    py: 1,
-                                                    textTransform: 'none',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: 600,
-                                                    borderRadius: 1.5,
-                                                    boxShadow: 'none',
-                                                    '&:hover': {
-                                                        boxShadow: 'none',
-                                                        transform: 'translateY(-1px)'
-                                                    },
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {isOnlinePaying ? 'Processing payment...' : 'Pay Securely'}
-                                            </LoadingButton>
-
-                                            <Stack
-                                                direction="row"
-                                                alignItems="center"
-                                                justifyContent="center"
-                                                gap={0.5}
-                                                sx={{
-                                                    p: 1,
-                                                    bgcolor: alpha(theme.palette.success.main, 0.08),
-                                                    borderRadius: 1.5
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="caption"
-                                                    color="success.main"
-                                                    fontWeight={600}
-                                                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                                                >
-                                                    Powered by
-                                                    <img
-                                                        src="https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg"
-                                                        alt="Razorpay"
-                                                        style={{ height: 16 }}
-                                                    />
+                                            <Stack direction="row" justifyContent="space-between">
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Shipping
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    ₹{SHIPPING.toFixed(2)}
+                                                </Typography>
+                                            </Stack>
+                                            <Stack direction="row" justifyContent="space-between">
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Taxes
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    ₹{TAXES.toFixed(2)}
                                                 </Typography>
                                             </Stack>
                                         </Stack>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        </Grid>
-                    </Grid>
-                ) : (
-                    /* Desktop Layout */
-                    <Grid container spacing={3}>
-                        {/* LEFT: Address */}
-                        <Grid item xs={12} md={7}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                            >
-                                <Stack gap={3}>
-                                    <Card
-                                        elevation={0}
-                                        sx={{
-                                            border: '1px solid',
-                                            borderColor: 'divider',
-                                            borderRadius: 3
-                                        }}
-                                    >
-                                        <CardContent sx={{ p: 3 }}>
-                                            <Stack gap={3}>
-                                                <Stack direction="row" alignItems="center" gap={2}>
-                                                    <Box
-                                                        sx={{
-                                                            width: 48,
-                                                            height: 48,
-                                                            borderRadius: 2,
-                                                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                    >
-                                                        <LocalShippingIcon color="primary" />
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography variant="h6" fontWeight={700}>
-                                                            Delivery Address
-                                                        </Typography>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            Choose where to deliver your order
-                                                        </Typography>
-                                                    </Box>
-                                                </Stack>
 
-                                                {addresses.length > 0 && (
-                                                    <Stack gap={2}>
-                                                        <Typography variant="body2" fontWeight={600} color="text.secondary">
-                                                            Saved Addresses ({addresses.length})
-                                                        </Typography>
-                                                        <Grid container spacing={2}>
-                                                            {addresses.map(address => (
-                                                                <Grid item xs={12} lg={6} key={address._1d || address._id}>
-                                                                    <Paper
-                                                                        elevation={0}
-                                                                        onClick={() => setSelectedAddressId(address._id)}
-                                                                        sx={{
-                                                                            p: 2,
-                                                                            cursor: 'pointer',
-                                                                            border: '2px solid',
-                                                                            borderColor: selectedAddressId === address._id
-                                                                                ? 'primary.main'
-                                                                                : 'divider',
-                                                                            bgcolor: selectedAddressId === address._id
-                                                                                ? alpha(theme.palette.primary.main, 0.04)
-                                                                                : 'white',
-                                                                            borderRadius: 2,
-                                                                            transition: 'all 0.2s',
-                                                                            position: 'relative',
-                                                                            '&:hover': {
-                                                                                borderColor: 'primary.main',
-                                                                                boxShadow: 2,
-                                                                                transform: 'translateY(-2px)'
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <Stack gap={1.5}>
-                                                                            <Stack
-                                                                                direction="row"
-                                                                                alignItems="center"
-                                                                                justifyContent="space-between"
-                                                                            >
-                                                                                <Chip
-                                                                                    icon={getAddressIcon(address.type)}
-                                                                                    label={address.type}
-                                                                                    size="small"
-                                                                                    color={selectedAddressId === address._id ? 'primary' : 'default'}
-                                                                                    sx={{ fontWeight: 600 }}
-                                                                                />
-                                                                                <Box
-                                                                                    sx={{
-                                                                                        width: 20,
-                                                                                        height: 20,
-                                                                                        borderRadius: '50%',
-                                                                                        border: '2px solid',
-                                                                                        borderColor: selectedAddressId === address._id
-                                                                                            ? 'primary.main'
-                                                                                            : 'divider',
-                                                                                        bgcolor: selectedAddressId === address._id
-                                                                                            ? 'primary.main'
-                                                                                            : 'transparent',
-                                                                                        display: 'flex',
-                                                                                        alignItems: 'center',
-                                                                                        justifyContent: 'center'
-                                                                                    }}
-                                                                                >
-                                                                                    {selectedAddressId === address._id && (
-                                                                                        <Box
-                                                                                            sx={{
-                                                                                                width: 8,
-                                                                                                height: 8,
-                                                                                                borderRadius: '50%',
-                                                                                                bgcolor: 'white'
-                                                                                            }}
-                                                                                        />
-                                                                                    )}
-                                                                                </Box>
-                                                                            </Stack>
+                                        <Divider />
 
-                                                                            <Box>
-                                                                                <Typography variant="body1" fontWeight={600}>
-                                                                                    {address.street}
-                                                                                </Typography>
-                                                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                                                                    {address.city}, {address.state}
-                                                                                </Typography>
-                                                                                <Typography variant="body2" color="text.secondary">
-                                                                                    {address.country} - {address.postalCode}
-                                                                                </Typography>
-                                                                                <Typography
-                                                                                    variant="body2"
-                                                                                    color="text.secondary"
-                                                                                    sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}
-                                                                                >
-                                                                                    📞 {address.phoneNumber}
-                                                                                </Typography>
-                                                                            </Box>
-                                                                        </Stack>
-                                                                    </Paper>
-                                                                </Grid>
-                                                            ))}
-                                                        </Grid>
-                                                    </Stack>
-                                                )}
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="h6" fontWeight={700}>
+                                                Total
+                                            </Typography>
+                                            <Typography variant="h6" fontWeight={700} color="primary">
+                                                ₹{orderTotal.toFixed(2)}
+                                            </Typography>
+                                        </Stack>
 
-                                                {!showAddressForm && (
-                                                    <Button
-                                                        variant="text"
-                                                        color="primary"
-                                                        onClick={() => setShowAddressForm(true)}
-                                                        startIcon={<LocationOnIcon />}
-                                                        sx={{
-                                                            alignSelf: 'flex-start',
-                                                            textTransform: 'none',
-                                                            fontWeight: 600,
-                                                            px: 2,
-                                                            py: 1
-                                                        }}
-                                                    >
-                                                        Add New Address
-                                                    </Button>
-                                                )}
-
-                                                {showAddressForm && (
-                                                    <Box
-                                                        component="form"
-                                                        onSubmit={handleSubmit(handleAddAddress)}
-                                                        sx={{
-                                                            p: 3,
-                                                            bgcolor: alpha(theme.palette.grey[50], 0.5),
-                                                            borderRadius: 2,
-                                                            border: '2px dashed',
-                                                            borderColor: 'divider'
-                                                        }}
-                                                    >
-                                                        <Stack gap={2}>
-                                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                                New Address Details
-                                                            </Typography>
-                                                            <Grid container spacing={2}>
-                                                                <Grid item xs={12} sm={6}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="Address Type"
-                                                                        placeholder="Home, Office, etc."
-                                                                        error={!!errors.type}
-                                                                        helperText={errors.type && 'Required field'}
-                                                                        {...register('type', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={6}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="Phone Number"
-                                                                        placeholder="+91 XXXXX XXXXX"
-                                                                        error={!!errors.phoneNumber}
-                                                                        helperText={errors.phoneNumber && 'Required field'}
-                                                                        {...register('phoneNumber', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="Street Address"
-                                                                        placeholder="House no, Building name, Street"
-                                                                        error={!!errors.street}
-                                                                        helperText={errors.street && 'Required field'}
-                                                                        {...register('street', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={4}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="City"
-                                                                        error={!!errors.city}
-                                                                        helperText={errors.city && 'Required field'}
-                                                                        {...register('city', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={4}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="State"
-                                                                        error={!!errors.state}
-                                                                        helperText={errors.state && 'Required field'}
-                                                                        {...register('state', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12} sm={4}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="Postal Code"
-                                                                        error={!!errors.postalCode}
-                                                                        helperText={errors.postalCode && 'Required field'}
-                                                                        {...register('postalCode', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                                <Grid item xs={12}>
-                                                                    <TextField
-                                                                        fullWidth
-                                                                        label="Country"
-                                                                        error={!!errors.country}
-                                                                        helperText={errors.country && 'Required field'}
-                                                                        {...register('country', { required: true })}
-                                                                    />
-                                                                </Grid>
-                                                            </Grid>
-
-                                                            <Stack direction="row" gap={2} justifyContent="flex-end">
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    onClick={handleResetForm}
-                                                                    sx={{
-                                                                        textTransform: 'none',
-                                                                        fontWeight: 600,
-                                                                        px: 4,
-                                                                        py: 1.25
-                                                                    }}
-                                                                >
-                                                                    Reset
-                                                                </Button>
-                                                                <LoadingButton
-                                                                    type="submit"
-                                                                    variant="contained"
-                                                                    loading={addressStatus === 'pending'}
-                                                                    sx={{
-                                                                        textTransform: 'none',
-                                                                        fontWeight: 600,
-                                                                        px: 4,
-                                                                        py: 1.25
-                                                                    }}
-                                                                >
-                                                                    Save Address
-                                                                </LoadingButton>
-                                                            </Stack>
-                                                        </Stack>
-                                                    </Box>
-                                                )}
-                                            </Stack>
-                                        </CardContent>
-                                    </Card>
-                                </Stack>
-                            </motion.div>
-                        </Grid>
-
-                        {/* RIGHT: Summary */}
-                        <Grid item xs={12} md={5}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: 0.1 }}
-                            >
-                                <Box sx={{ position: 'sticky', top: 24 }}>
-                                    <Card
-                                        elevation={0}
-                                        sx={{
-                                            border: '1px solid',
-                                            borderColor: 'divider',
-                                            borderRadius: 3,
-                                            overflow: 'hidden'
-                                        }}
-                                    >
-                                        <Box
+                                        <LoadingButton
+                                            fullWidth
+                                            variant="contained"
+                                            size="large"
+                                            loading={isOnlinePaying}
+                                            onClick={handlePayClick}
+                                            disabled={!selectedAddress || !itemsToCheckout.length || hasInvalidItems}
+                                            startIcon={<LockIcon />}
                                             sx={{
-                                                p: 3,
-                                                bgcolor: alpha(theme.palette.primary.main, 0.04),
-                                                borderBottom: '1px solid',
-                                                borderColor: 'divider'
+                                                py: 1.5,
+                                                textTransform: 'none',
+                                                fontWeight: 600
                                             }}
                                         >
-                                            <Stack direction="row" alignItems="center" gap={2}>
-                                                <Box
-                                                    sx={{
-                                                        width: 48,
-                                                        height: 48,
-                                                        borderRadius: 2,
-                                                        bgcolor: 'white',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        border: '1px solid',
-                                                        borderColor: 'divider'
-                                                    }}
-                                                >
-                                                    <ShoppingBagIcon color="primary" />
-                                                </Box>
-                                                <Box>
-                                                    <Typography variant="h6" fontWeight={700}>
-                                                        Order Summary
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {itemsToCheckout.length} item{itemsToCheckout.length !== 1 ? 's' : ''}
-                                                    </Typography>
-                                                </Box>
-                                            </Stack>
-                                        </Box>
+                                            {isOnlinePaying ? 'Processing...' : 'Pay Securely'}
+                                        </LoadingButton>
 
-                                        <CardContent sx={{ p: 3 }}>
-                                            <Stack gap={3}>
-                                                <Stack
-                                                    gap={2}
-                                                    sx={{
-                                                        maxHeight: 320,
-                                                        overflowY: 'auto',
-                                                        pr: 1,
-                                                        '&::-webkit-scrollbar': {
-                                                            width: '6px'
-                                                        },
-                                                        '&::-webkit-scrollbar-track': {
-                                                            bgcolor: alpha(theme.palette.grey[200], 0.3),
-                                                            borderRadius: 10
-                                                        },
-                                                        '&::-webkit-scrollbar-thumb': {
-                                                            bgcolor: alpha(theme.palette.grey[400], 0.5),
-                                                            borderRadius: 10,
-                                                            '&:hover': {
-                                                                bgcolor: alpha(theme.palette.grey[500], 0.7)
-                                                            }
-                                                        }
-                                                    }}
-                                                >
-                                                    {itemsToCheckout.map((item, idx) => {
-                                                        const product = item.product || null
-                                                        const isDeleted = !product || !product._id
-                                                        const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price))
-                                                            ? item.price
-                                                            : product?.price || 0;
-
-                                                        const lineTotal = unitPrice * item.quantity;
-
-
-                                                        return (
-                                                            <Stack
-                                                                key={idx}
-                                                                direction="row"
-                                                                gap={2}
-                                                                sx={{
-                                                                    p: 1.5,
-                                                                    bgcolor: alpha(theme.palette.grey[50], 0.5),
-                                                                    borderRadius: 2,
-                                                                    border: '1px solid',
-                                                                    borderColor: 'divider'
-                                                                }}
-                                                            >
-                                                                <Box
-                                                                    sx={{
-                                                                        width: 70,
-                                                                        height: 70,
-                                                                        flexShrink: 0,
-                                                                        borderRadius: 1.5,
-                                                                        overflow: 'hidden',
-                                                                        bgcolor: 'white',
-                                                                        border: '1px solid',
-                                                                        borderColor: 'divider',
-                                                                        p: 1
-                                                                    }}
-                                                                >
-                                                                    <img
-                                                                        src={product?.thumbnail || "/placeholder.png"}
-                                                                        alt={product?.title || "Product removed"}
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            height: '100%',
-                                                                            objectFit: 'contain'
-                                                                        }}
-                                                                    />
-                                                                </Box>
-
-                                                                <Stack flex={1} justifyContent="space-between">
-                                                                    <Box>
-                                                                        <Typography
-                                                                            variant="body1"
-                                                                            fontWeight={600}
-                                                                            sx={{
-                                                                                overflow: 'hidden',
-                                                                                textOverflow: 'ellipsis',
-                                                                                display: '-webkit-box',
-                                                                                WebkitLineClamp: 2,
-                                                                                WebkitBoxOrient: 'vertical',
-                                                                                lineHeight: 1.4
-                                                                            }}
-                                                                        >
-                                                                            {product?.title || "Product no longer available"}
-                                                                        </Typography>
-                                                                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.5 }}>
-                                                                            <Typography
-                                                                                variant="body2"
-                                                                                color="text.secondary"
-                                                                            >
-                                                                                Quantity: {item.quantity}
-                                                                            </Typography>
-                                                                            {item.size && !isDeleted && (
-                                                                                <>
-                                                                                    <Typography variant="body2" color="text.secondary">•</Typography>
-                                                                                    <Chip
-                                                                                        label={`Size: ${item.size}`}
-                                                                                        size="small"
-                                                                                        sx={{
-                                                                                            height: 20,
-                                                                                            fontSize: '0.7rem',
-                                                                                            fontWeight: 600,
-                                                                                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                                                                            color: 'primary.main'
-                                                                                        }}
-                                                                                    />
-                                                                                </>
-                                                                            )}
-                                                                        </Stack>
-                                                                        {isDeleted && (
-                                                                            <Typography variant="caption" color="error.main">
-                                                                                This item is no longer available
-                                                                            </Typography>
-                                                                        )}
-                                                                    </Box>
-                                                                    <Typography
-                                                                        variant="h6"
-                                                                        fontWeight={700}
-                                                                        color="primary.main"
-                                                                        sx={{ fontSize: '1.1rem' }}
-                                                                    >
-                                                                        ₹{lineTotal.toFixed(2)}
-                                                                    </Typography>
-                                                                </Stack>
-                                                            </Stack>
-                                                        )
-                                                    })}
-                                                </Stack>
-
-                                                <Divider />
-
-                                                <Stack gap={1.5}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                        <Typography variant="body1" color="text.secondary">
-                                                            Subtotal
-                                                        </Typography>
-                                                        <Typography variant="body1" fontWeight={600}>
-                                                            ₹{orderSubtotal.toFixed(2)}
-                                                        </Typography>
-                                                    </Stack>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                        <Typography variant="body1" color="text.secondary">
-                                                            Shipping Charges
-                                                        </Typography>
-                                                        <Typography variant="body1" fontWeight={600}>
-                                                            ₹{SHIPPING.toFixed(2)}
-                                                        </Typography>
-                                                    </Stack>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                        <Typography variant="body1" color="text.secondary">
-                                                            Taxes & Fees
-                                                        </Typography>
-                                                        <Typography variant="body1" fontWeight={600}>
-                                                            ₹{TAXES.toFixed(2)}
-                                                        </Typography>
-                                                    </Stack>
-                                                </Stack>
-
-                                                <Divider sx={{ borderStyle: 'dashed' }} />
-
-                                                <Stack
-                                                    direction="row"
-                                                    justifyContent="space-between"
-                                                    alignItems="center"
-                                                    sx={{
-                                                        p: 2,
-                                                        bgcolor: alpha(theme.palette.primary.main, 0.08),
-                                                        borderRadius: 2
-                                                    }}
-                                                >
-                                                    <Typography variant="h6" fontWeight={700}>
-                                                        Total Amount
-                                                    </Typography>
-                                                    <Typography variant="h5" fontWeight={800} color="primary.main">
-                                                        ₹{orderTotal.toFixed(2)}
-                                                    </Typography>
-                                                </Stack>
-
-                                                <LoadingButton
-                                                    fullWidth
-                                                    size="large"
-                                                    variant="contained"
-                                                    loading={isOnlinePaying}
-                                                    onClick={handlePayClick}
-                                                    disabled={!selectedAddress || !itemsToCheckout.length || hasInvalidItems}
-                                                    startIcon={<LockIcon />}
-                                                    sx={{
-                                                        py: 1.75,
-                                                        textTransform: 'none',
-                                                        fontSize: '1.05rem',
-                                                        fontWeight: 700,
-                                                        borderRadius: 2,
-                                                        boxShadow: 3,
-                                                        '&:hover': {
-                                                            boxShadow: 5,
-                                                            transform: 'translateY(-2px)'
-                                                        },
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    {isOnlinePaying ? 'Processing Payment...' : 'Proceed to Secure Payment'}
-                                                </LoadingButton>
-
-                                                <Stack
-                                                    direction="row"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                    gap={1}
-                                                    sx={{
-                                                        p: 1.5,
-                                                        bgcolor: alpha(theme.palette.success.main, 0.08),
-                                                        borderRadius: 2,
-                                                        border: '1px solid',
-                                                        borderColor: alpha(theme.palette.success.main, 0.2)
-                                                    }}
-                                                >
-                                                    <LockIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="success.main"
-                                                        fontWeight={600}
-                                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                                                    >
-                                                        Powered by
-                                                        <img
-                                                            src="https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg"
-                                                            alt="Razorpay"
-                                                            style={{ height: 18, marginLeft: 4 }}
-                                                        />
-                                                    </Typography>
-                                                </Stack>
-                                            </Stack>
-                                        </CardContent>
-                                    </Card>
-                                </Box>
-                            </motion.div>
-                        </Grid>
+                                        <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            justifyContent="center"
+                                            spacing={0.5}
+                                            sx={{
+                                                py: 1,
+                                                px: 2,
+                                                bgcolor: alpha(theme.palette.success.main, 0.08),
+                                                borderRadius: 1
+                                            }}
+                                        >
+                                            <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                                            <Typography variant="caption" color="success.main" fontWeight={500}>
+                                                Secured by Razorpay
+                                            </Typography>
+                                        </Stack>
+                                    </Stack>
+                                </Collapse>
+                            </Stack>
+                        </Paper>
                     </Grid>
-                )}
+                </Grid>
             </Container>
 
             <PaymentSuccessDialog
@@ -1533,20 +754,6 @@ export const Checkout = () => {
                 orderId={showSuccessAnimation.orderId}
                 onViewOrder={handleViewOrder}
             />
-
-
-            {/* ====================== OTP DISABLED (OPTION A) ======================
-                The OTPDialog render is commented out so OTP is completely bypassed.
-                Re-enable by un-commenting the block and the OTP import at the top.
-            */}
-            {/*
-            <OTPDialog
-                open={otpDialogOpen}
-                phone={otpTargetPhone}
-                onVerified={handleOtpVerified}
-                onClose={() => setOtpDialogOpen(false)}
-            />
-            */}
         </Box>
     )
 }
