@@ -45,14 +45,9 @@ import { SHIPPING, TAXES } from '../../../constants'
 import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { axiosi } from '../../../config/axios'
-/* ====================== OTP DISABLED (OPTION A) ======================
-// All OTP related imports are commented out but retained for reference/testing.
-// OTPDialog used to be imported here for Firebase OTP verification.
-// import OTPDialog from '../../../dialogs/OTPDialog'
-*/
 import PaymentSuccessDialog from '../../../dialogs/PaymentSuccessDialog';
 
-// Load Razorpay script once
+// Load Razorpay script once (same as before)
 const loadRazorpayScript = () => {
     return new Promise((resolve) => {
         if (window.Razorpay) {
@@ -85,19 +80,6 @@ export const Checkout = () => {
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [isOnlinePaying, setIsOnlinePaying] = useState(false)
 
-    /* ====================== OTP DISABLED (OPTION A) ======================
-       Retaining OTP related state and helpers as commented blocks so you can
-       re-enable later without losing logic. All lines between the markers
-       are inactive (commented) — they are the previous OTP flow.
-
-    // OTP state (Firebase)
-    // const [otpDialogOpen, setOtpDialogOpen] = useState(false)
-    // const [otpTargetPhone, setOtpTargetPhone] = useState('')
-    // const [firebasePhoneToken, setFirebasePhoneToken] = useState(null)
-    // const [otpVerifiedPhone, setOtpVerifiedPhone] = useState(null)
-    */
-
-    // Payment success animation state
     const [showSuccessAnimation, setShowSuccessAnimation] = useState({
         open: false,
         orderId: null
@@ -107,60 +89,52 @@ export const Checkout = () => {
     const passedSelectedItems = location.state?.selectedItems || null
     const buyNowItem = location.state?.buyNow ? location.state?.product : null
 
+    // If buyNowItem exists, it should already have price set (ProductDetails pushes discounted price)
     const formattedBuyNowItem = buyNowItem
         ? [{
             cartItemId: null,
             product: {
                 _id: buyNowItem._id,
                 title: buyNowItem.title,
-                price: buyNowItem.price,
+                price: buyNowItem.price, // should be discounted price
                 thumbnail: buyNowItem.thumbnail,
                 brand: { name: buyNowItem.brand }
             },
             quantity: buyNowItem.quantity,
-            size: buyNowItem.size || null
+            size: buyNowItem.size || null,
+            price: buyNowItem.price // store price at top-level for easier usage
         }]
         : null
 
-    // Items to checkout
-    const itemsToCheckout = useMemo(
-        () => {
-            if (formattedBuyNowItem) return formattedBuyNowItem
-            if (passedSelectedItems?.length) return passedSelectedItems
-            return cartItems.map(ci => ({
-                cartItemId: ci._id,
-                product: ci.product,
-                quantity: ci.quantity,
-                size: ci.size || null
-            }))
-        },
-        [passedSelectedItems, cartItems, formattedBuyNowItem]
-    )
+    // Items to checkout: include price (cart item price if present)
+    const itemsToCheckout = useMemo(() => {
+        if (formattedBuyNowItem) return formattedBuyNowItem;
+        if (passedSelectedItems?.length) return passedSelectedItems;
+        return cartItems.map(ci => ({
+            cartItemId: ci._id,
+            product: ci.product,
+            quantity: ci.quantity,
+            size: ci.size || null,
+            price: (typeof ci.price === 'number' ? ci.price : (ci.product?.price ?? 0))
+        }));
+    }, [passedSelectedItems, cartItems, formattedBuyNowItem]);
 
-    // Any invalid/missing products?
-    const hasInvalidItems = useMemo(
-        () =>
-            itemsToCheckout.some(
-                it =>
-                    !it.product ||
-                    !it.product._id ||
-                    typeof it.product.price !== 'number'
-            ),
+    const hasInvalidItems = useMemo(() =>
+            itemsToCheckout.some(it => !it.product || !it.product._id || typeof (it.price ?? it.product.price) !== 'number'),
         [itemsToCheckout]
-    )
+    );
 
-    // Totals (skip invalid items)
-    const orderSubtotal = useMemo(
-        () => itemsToCheckout.reduce((acc, item) => {
-            if (!item.product || typeof item.product.price !== 'number') return acc
-            return acc + (item.product.price * item.quantity)
-        }, 0),
-        [itemsToCheckout]
-    )
+    // Totals: use item.price (cart-stored price or buy-now price) first
+    const orderSubtotal = useMemo(() => itemsToCheckout.reduce((acc, item) => {
+        if (!item.product || typeof (item.price ?? item.product.price) !== 'number') return acc;
+        const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price)) ? item.price : item.product.price;
+        return acc + (unitPrice * item.quantity);
+    }, 0), [itemsToCheckout]);
 
-    const orderTotal = orderSubtotal + SHIPPING + TAXES
+    const orderTotal = orderSubtotal + SHIPPING + TAXES;
 
-    // Address selection / default behavior
+    // ... rest of the component mostly unchanged, but update any local lineTotals/display to use item.price if present
+
     useEffect(() => {
         if (addresses.length > 0 && !selectedAddressId) {
             setSelectedAddressId(addresses[0]._id)
@@ -181,7 +155,6 @@ export const Checkout = () => {
         [addresses, selectedAddressId]
     )
 
-    // Redirect if no items
     useEffect(() => {
         if (!itemsToCheckout?.length) {
             toast.info('Your cart is empty.')
@@ -189,7 +162,6 @@ export const Checkout = () => {
         }
     }, [itemsToCheckout, navigate])
 
-    // Finalize cart after successful order (Razorpay)
     const finalizeCartAfterOrder = useCallback(
         async (orderId) => {
             try {
@@ -207,19 +179,13 @@ export const Checkout = () => {
                     await dispatch(resetCartByUserIdAsync(loggedInUser._id)).unwrap();
                 }
 
-                // ❌ DO NOT NAVIGATE HERE
-                // navigate(`/order-success/${orderId}`);
-
             } catch (err) {
-                // ❌ ALSO REMOVE THIS
-                // navigate(`/order-success/${orderId}`);
+                // nothing to do here
             }
         },
-        [dispatch, navigate, passedSelectedItems, formattedBuyNowItem, loggedInUser]
+        [dispatch, passedSelectedItems, formattedBuyNowItem, loggedInUser]
     );
 
-
-    // Add new address
     const handleAddAddress = (data) => {
         if (!loggedInUser?._id) {
             toast.error('Please login.')
@@ -228,7 +194,7 @@ export const Checkout = () => {
         dispatch(addAddressAsync({ ...data, user: loggedInUser._id }))
     }
 
-    // Core Razorpay payment flow (previously required OTP before calling this)
+    // Payment flow: build payload using frontend-calculated subtotal (which uses item.price)
     const handleRazorpayPayment = async () => {
         try {
             if (!loggedInUser?._id) {
@@ -248,17 +214,6 @@ export const Checkout = () => {
                 return
             }
 
-            /* ====================== OTP DISABLED (OPTION A) ======================
-               Previously we enforced firebasePhoneToken presence here:
-               if (!firebasePhoneToken) {
-                   toast.error('Please verify your mobile number before payment.')
-                   return
-               }
-               That check is now disabled. For record-keeping, the firebase token
-               was sent as firebasePhoneToken in the payload. We will NOT include
-               firebasePhoneToken in the payload while OTP is disabled.
-            */
-
             const scriptLoaded = await loadRazorpayScript()
             if (!scriptLoaded || !window.Razorpay) {
                 toast.error('Unable to load Razorpay. Please try again.')
@@ -268,13 +223,14 @@ export const Checkout = () => {
 
             setIsOnlinePaying(true)
 
+            // Build order items payload: product id + qty + size + unit price (so backend can verify)
             const orderItemsPayload = itemsToCheckout.map(it => ({
                 product: { _id: it.product._id },
                 quantity: it.quantity,
-                size: it.size || null
+                size: it.size || null,
+                unitPrice: (typeof it.price === 'number' ? it.price : it.product.price)
             }))
 
-            // NOTE: firebasePhoneToken removed from payload while OTP is disabled
             const payload = {
                 user: loggedInUser._id,
                 userEmail: loggedInUser.email,
@@ -286,7 +242,6 @@ export const Checkout = () => {
                 taxAmount: TAXES,
                 finalAmount: orderTotal,
                 paymentMode: 'RAZORPAY'
-                // firebasePhoneToken: firebasePhoneToken  <-- removed while OTP is disabled
             }
 
             const { data } = await axiosi.post('/orders/razorpay/create', payload)
@@ -350,10 +305,8 @@ export const Checkout = () => {
         }
     }
 
-    // Normalize phone helper (last 10 digits)
     const normalizePhone = (phone) =>
         (phone || '').toString().replace(/\D/g, '').slice(-10)
-
 
     const handleViewOrder = (orderId) => {
         if (!orderId) {
@@ -369,8 +322,6 @@ export const Checkout = () => {
         }, 50);
     };
 
-    // Click handler for "Pay" – previously enforced OTP BEFORE calling Razorpay.
-    // Now OTP is bypassed and handleRazorpayPayment is called directly.
     const handlePayClick = () => {
         if (!selectedAddress) {
             toast.error('Please select an address.')
@@ -395,32 +346,8 @@ export const Checkout = () => {
             return
         }
 
-        /* ====================== OTP DISABLED (OPTION A) ======================
-           Previously: If firebasePhoneToken & otpVerifiedPhone matched we
-           proceeded -> otherwise we opened OTPDialog to verify and then call
-           handleRazorpayPayment. Now we bypass OTP entirely and call payment
-           directly. The old flow is preserved above/below as commented code.
-        */
-
-        // Directly proceed to payment (OTP bypassed)
         handleRazorpayPayment()
     }
-
-    /* ====================== OTP DISABLED (OPTION A) ======================
-       Old OTP callback retained as commented for future re-enable.
-
-    // Callback when OTPDialog verifies successfully
-    // const handleOtpVerified = (idToken) => {
-    //     const basePhone = selectedAddress?.phoneNumber || otpTargetPhone
-    //     const normalized = normalizePhone(basePhone)
-    //
-    //     setFirebasePhoneToken(idToken)
-    //     setOtpVerifiedPhone(normalized)
-    //     setOtpDialogOpen(false)
-    //
-    //     handleRazorpayPayment()
-    // }
-    */
 
     const getAddressIcon = (type) => {
         const lowerType = type?.toLowerCase() || ''
@@ -815,9 +742,12 @@ export const Checkout = () => {
                                                 {itemsToCheckout.map((item, idx) => {
                                                     const product = item.product || null
                                                     const isDeleted = !product || !product._id
-                                                    const lineTotal = !isDeleted && typeof product.price === 'number'
-                                                        ? product.price * item.quantity
-                                                        : 0
+                                                    const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price))
+                                                        ? item.price
+                                                        : product?.price || 0;
+
+                                                    const lineTotal = unitPrice * item.quantity;
+
 
                                                     return (
                                                         <Stack
@@ -1382,9 +1312,12 @@ export const Checkout = () => {
                                                     {itemsToCheckout.map((item, idx) => {
                                                         const product = item.product || null
                                                         const isDeleted = !product || !product._id
-                                                        const lineTotal = !isDeleted && typeof product.price === 'number'
-                                                            ? product.price * item.quantity
-                                                            : 0
+                                                        const unitPrice = (typeof item.price === 'number' && !Number.isNaN(item.price))
+                                                            ? item.price
+                                                            : product?.price || 0;
+
+                                                        const lineTotal = unitPrice * item.quantity;
+
 
                                                         return (
                                                             <Stack

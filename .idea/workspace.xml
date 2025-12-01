@@ -5,23 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="648b27b4-a3dc-43d2-8d43-c10ce5238468" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Zara Boutiques.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/seed/Brand.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/seed/Brand.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/seed/Category.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/seed/Category.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/seed/Product.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/seed/Product.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/seed/seed.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/seed/seed.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/controllers/Cart.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/controllers/Cart.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/controllers/Product.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/controllers/Product.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/models/Cart.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Cart.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/models/Product.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Product.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/components/AddProduct.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/components/AddProduct.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/components/ProductUpdate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/components/ProductUpdate.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/cart/components/Cart.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/cart/components/Cart.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/cart/components/CartItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/cart/components/CartItem.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/checkout/components/Checkout.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/checkout/components/Checkout.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/navigation/components/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/navigation/components/Navbar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/products/components/ProductCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/products/components/ProductCard.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/products/components/ProductDetails.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/products/components/ProductDetails.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/products/components/ProductList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/products/components/ProductList.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/review/components/ReviewItem.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/review/components/ReviewItem.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/features/review/components/Reviews.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/review/components/Reviews.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/firebase/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/firebase/client.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,7 +80,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1764506987538</updated>
-      <workItem from="1764506988936" duration="7956000" />
+      <workItem from="1764506988936" duration="16509000" />
     </task>
     <servers />
   </component>

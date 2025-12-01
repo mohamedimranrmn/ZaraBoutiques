@@ -495,12 +495,19 @@ export const ProductList = () => {
                                     <ProductCard
                                         id={p._id}
                                         title={p.title}
-                                        price={p.price}
+                                        price={p.discountedPrice !== undefined ? p.discountedPrice : p.price}
+                                        originalPrice={
+                                            p.discountPercentage > 0
+                                                ? p.price   // show MRP
+                                                : null      // hide strike
+                                        }
+                                        discountPercentage={p.discountPercentage || 0}
                                         thumbnail={p.thumbnail}
                                         brand={p.brand?.name}
                                         stockQuantity={p.stockQuantity}
                                         handleAddRemoveFromWishlist={(e, id) => handleWishlistToggle(e, id)}
                                     />
+
                                 </Grid>
                             ))}
                         </Grid>

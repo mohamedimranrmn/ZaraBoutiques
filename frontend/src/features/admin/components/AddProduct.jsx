@@ -496,7 +496,7 @@ export const AddProduct = () => {
 
                                     {/* ADDITIONAL IMAGES */}
                                     <Typography fontWeight={600} mb={2}>
-                                        Additional Images * (at least 1)
+                                        Additional Images *
                                     </Typography>
 
                                     <Grid container spacing={2}>
@@ -572,38 +572,6 @@ export const AddProduct = () => {
                                 </CardContent>
                             </Card>
                         </Grid>
-
-                        {/* ACTION BUTTON */}
-                        <Grid item xs={12}>
-                            <Stack direction="row" justifyContent="flex-end" gap={2}>
-
-                                <Button
-                                    variant="outlined"
-                                    component={Link}
-                                    to="/admin/dashboard"
-                                >
-                                    Cancel
-                                </Button>
-
-                                <Box>
-                                    <Button
-                                        type="submit"
-                                        variant="contained"
-                                        disabled={uploading}
-                                        startIcon={<SaveIcon />}
-                                    >
-                                        {uploading ? "Uploading..." : "Save Product"}
-                                    </Button>
-
-                                    {uploading && (
-                                        <Box sx={{ width: 250, mt: 1 }}>
-                                            <LinearProgress variant="determinate" value={uploadProgress} />
-                                            <Typography variant="caption">{uploadProgress}%</Typography>
-                                        </Box>
-                                    )}
-                                </Box>
-                            </Stack>
-                        </Grid>
                     </Grid>
                 </form>
             </Box>
@@ -618,7 +586,7 @@ export const AddProduct = () => {
                         height: 70,
                         bgcolor: "rgba(255,255,255,0.8)",
                         backdropFilter: "blur(10px)",
-                        zIndex: 1000,
+                        zIndex: 1500,
                     }}
                 >
                     <Fab

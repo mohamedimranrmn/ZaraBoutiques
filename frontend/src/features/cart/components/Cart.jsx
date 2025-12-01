@@ -45,9 +45,9 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
 
     /** SAFE subtotal calculation */
     const subtotalAll = items.reduce((acc, it) => {
-        if (!it.product) return acc
-        return acc + it.product.price * it.quantity
-    }, 0)
+        if (!it.product) return acc;
+        return acc + (it.price || it.product.price) * it.quantity;
+    }, 0);
 
     const [selectedMap, setSelectedMap] = useState({})
     const [oosDialogOpen, setOosDialogOpen] = useState(false)
@@ -92,7 +92,8 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                 cartItemId: it._id,
                 product: it.product,
                 quantity: it.quantity,
-                size: it.size || null
+                size: it.size || null,
+                price: it.price
             }))
     }, [checkout, reduxItems, selectedMap])
 
@@ -100,7 +101,7 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
     const subtotalSelected = useMemo(() => {
         return selectedItems.reduce((acc, item) => {
             if (!item.product) return acc
-            return acc + item.product.price * item.quantity
+            return acc + (item.price || item.product.price) * item.quantity;
         }, 0)
     }, [selectedItems])
 
@@ -290,6 +291,7 @@ export const Cart = ({ checkout = false, itemsOverride = null }) => {
                                         _id={item._id}
                                         product={item.product}
                                         quantity={item.quantity}
+                                        price={item.price}
                                         size={item.size}
                                         selectable={!checkout}
                                         checked={!checkout ? !!selectedMap[item._id] : false}

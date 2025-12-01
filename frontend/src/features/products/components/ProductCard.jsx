@@ -13,203 +13,180 @@ import Favorite from "@mui/icons-material/Favorite";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { selectWishlistItems } from "../../wishlist/WishlistSlice";
 import { selectCartItems, addToCartAsync } from "../../cart/CartSlice";
+import { selectWishlistItems } from "../../wishlist/WishlistSlice";
 import { selectLoggedInUser } from "../../auth/AuthSlice";
-import Skeleton from "@mui/material/Skeleton";
 
 export const ProductCard = ({
                                 id,
                                 title,
-                                price,
+                                price,                  // discounted price
+                                originalPrice = null,   // original MRP
+                                discountPercentage = 0,
                                 thumbnail,
                                 brand,
-                                handleAddRemoveFromWishlist,
                                 isWishlistCard = false,
                                 isAdminCard = false,
-                                loading = false,
+                                handleAddRemoveFromWishlist
                             }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-    const wishlistItems = useSelector(selectWishlistItems);
     const cartItems = useSelector(selectCartItems);
+    const wishlistItems = useSelector(selectWishlistItems);
     const loggedInUser = useSelector(selectLoggedInUser);
 
-    const isInWishlist = wishlistItems.some((item) => item.product._id === id);
-    const isInCart = cartItems.some((item) => item.product._id === id);
+    const inCart = cartItems.some((i) => i.product._id === id);
+    const inWishlist = wishlistItems.some((i) => i.product._id === id);
+
+    const showOriginal =
+        originalPrice &&
+        originalPrice > price;      // IMPORTANT FIX
+
+    const showDiscount =
+        discountPercentage &&
+        discountPercentage > 0;     // IMPORTANT FIX
 
     const addToCart = (e) => {
         e.stopPropagation();
-        if (!loggedInUser) {
-            navigate("/login");
-            return;
-        }
-        dispatch(addToCartAsync({ user: loggedInUser?._id, product: id }));
+        if (!loggedInUser) return navigate("/login");
+        dispatch(addToCartAsync({ user: loggedInUser._id, product: id }));
     };
 
-    const handleBuyNow = (e) => {
-        e.stopPropagation();
-        // Navigate to checkout with only this product (buyNow flow)
-        navigate("/checkout", {
-            state: {
-                buyNow: true,
-                product: {
-                    _id: id,
-                    title,
-                    price,
-                    thumbnail,
-                    brand,
-                    quantity: 1,
-                },
-            },
-        });
-    };
-
-    if (loading) {
-        return (
-            <Paper elevation={1} sx={{ p: 1.25, borderRadius: 2 }}>
-                <Skeleton variant="rectangular" width="100%" sx={{ aspectRatio: "1/1", borderRadius: 1 }} />
-                <Skeleton width="60%" height={24} sx={{ mt: 1 }} />
-                <Skeleton width="40%" height={20} sx={{ mt: 0.5 }} />
-            </Paper>
-        );
-    }
     return (
         <Paper
             elevation={1}
             component={motion.div}
             whileHover={{ scale: 1.01 }}
+            onClick={() => navigate(`/product-details/${id}`)}
             sx={{
                 width: "100%",
                 borderRadius: 2,
                 overflow: "hidden",
-                p: 1,
+                p: 1.25,
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
-                mt: 2, // margin-top to avoid touching banner on hover
-                transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                position: "relative"
             }}
-            onClick={() => navigate(`/product-details/${id}`)}
         >
-            {/* Image */}
+
+            {/* Discount Badge */}
+            {showDiscount && (
+                <Box sx={{
+                    position: "absolute",
+                    top: 10,
+                    left: 10,
+                    bgcolor: "error.main",
+                    color: "white",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    px: 1,
+                    py: 0.3,
+                    borderRadius: 1.5,
+                    zIndex: 5
+                }}>
+                    -{discountPercentage}%
+                </Box>
+            )}
+
+            {/* IMAGE */}
             <Box
                 sx={{
                     width: "100%",
                     aspectRatio: "1/1",
-                    bgcolor: "grey.50",
-                    borderRadius: 1,
+                    borderRadius: 1.5,
                     overflow: "hidden",
+                    bgcolor: "grey.100",
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
+                    alignItems: "center"
                 }}
             >
-                <Box
-                    component="img"
+                <img
                     src={thumbnail}
                     alt={title}
-                    sx={{ width: "100%", height: "100%", objectFit: "contain", p: 1 }}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        padding: 8
+                    }}
                 />
             </Box>
 
-            {/* Details */}
-            <Stack spacing={1} mt={1} flex={1}>
-                {/* Title + Wishlist */}
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Typography
-                        variant="body1"
-                        fontWeight={600}
-                        sx={{
-                            lineHeight: 1.25,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            flex: 1,
-                        }}
-                    >
-                        {title}
-                    </Typography>
-
-                    {!isAdminCard && (
-                        <motion.div whileHover={{ scale: 1.12 }}>
-                            <Checkbox
-                                checked={isInWishlist}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => handleAddRemoveFromWishlist(e, id)}
-                                icon={<FavoriteBorder />}
-                                checkedIcon={<Favorite sx={{ color: "red" }} />}
-                                sx={{ p: 0.5 }}
-                            />
-                        </motion.div>
-                    )}
-                </Stack>
-
-                <Typography variant="caption" color="text.secondary">
-                    {brand}
+            {/* Title + Wishlist */}
+            <Stack direction="row" justifyContent="space-between" mt={1}>
+                <Typography
+                    variant="body1"
+                    fontWeight={600}
+                    sx={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        width: "100%",
+                        lineHeight: 1.3
+                    }}
+                >
+                    {title}
                 </Typography>
 
-                {/* PRICE */}
+                {!isAdminCard && (
+                    <Checkbox
+                        checked={inWishlist}
+                        icon={<FavoriteBorder />}
+                        checkedIcon={<Favorite sx={{ color: "red" }} />}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleAddRemoveFromWishlist(e, id)}
+                        sx={{ p: 0.3 }}
+                    />
+                )}
+            </Stack>
+
+            {/* Brand */}
+            <Typography variant="caption" color="text.secondary">
+                {brand}
+            </Typography>
+
+            {/* Price Row */}
+            <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
                 <Typography variant="h6" fontWeight={700}>
                     ₹{price}
                 </Typography>
 
-                {/* ACTION BUTTON - single button visible (Add to Cart OR Buy Now) */}
-                {!isWishlistCard && !isAdminCard && (
-                    isInCart ? (
-                        <Button
-                            component={motion.button}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.99 }}
-                            variant="contained"
-                            color="primary"
-                            fullWidth
-                            onClick={handleBuyNow}
-                            sx={{
-                                mt: 1,
-                                py: isMobile ? 1.1 : 1.3,
-                                fontWeight: 700,
-                                textTransform: "none",
-                                fontSize: isMobile ? "0.82rem" : "0.9rem",
-                                whiteSpace: "nowrap",        // force single line
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                            }}
-                        >
-                            Buy Now
-                        </Button>
-                    ) : (
-                        <Button
-                            component={motion.button}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.99 }}
-                            variant="contained"
-                            fullWidth
-                            onClick={addToCart}
-                            sx={{
-                                mt: 1,
-                                py: isMobile ? 1.1 : 1.3,
-                                bgcolor: "black",
-                                color: "white",
-                                fontWeight: 700,
-                                textTransform: "none",
-                                fontSize: isMobile ? "0.82rem" : "0.9rem",
-                                whiteSpace: "nowrap",        // ⬅️ forces text into a single line
-                                overflow: "hidden",          // ⬅️ prevents spilling out
-                                textOverflow: "ellipsis",    // ⬅️ safety for small screens
-                                "&:hover": { bgcolor: "rgba(0,0,0,0.85)" },
-                            }}
-                        >
-                            Add to Cart
-                        </Button>
-
-                    )
+                {showOriginal && (
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ textDecoration: "line-through" }}
+                    >
+                        ₹{originalPrice}
+                    </Typography>
                 )}
             </Stack>
+
+            {/* Add to cart */}
+            {!isWishlistCard && !isAdminCard && (
+                <Button
+                    variant="contained"
+                    onClick={addToCart}
+                    sx={{
+                        mt: 1,
+                        py: 1,
+                        borderRadius: 2,
+                        bgcolor: "black",
+                        color: "white",
+                        fontWeight: 700,
+                        textTransform: "none",
+                        fontSize: "0.85rem",
+                        "&:hover": { bgcolor: "grey.900" }
+                    }}
+                >
+                    {inCart ? "Go to Cart" : "Add to Cart"}
+                </Button>
+            )}
         </Paper>
     );
 };
