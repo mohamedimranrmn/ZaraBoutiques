@@ -83,6 +83,7 @@ const brands = [
 
 exports.seedBrand = async () => {
   try {
+    await Brand.deleteMany({});
     await Brand.insertMany(brands);
     console.log('Brand seeded successfully');
   } catch (error) {

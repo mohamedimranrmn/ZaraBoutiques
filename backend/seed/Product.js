@@ -25,7 +25,7 @@ const products = [
     _id: "65a7e45902e12c44f599444f",
     title: "Fog Scent Xpressio Perfume custom",
     description:
-      "Product details of Best Fog Scent Xpressio Perfume 100ml For Men cool long lasting perfumes for Men",
+        "Product details of Best Fog Scent Xpressio Perfume 100ml For Men cool long lasting perfumes for Men",
     price: 13,
     discountPercentage: 8.14,
     stockQuantity: 21,
@@ -46,7 +46,7 @@ const products = [
     _id: "65a7e45902e12c44f5994450",
     title: "Samsung Universe 9",
     description:
-      "Samsung's new variant which goes beyond Galaxy to the Universe",
+        "Samsung's new variant which goes beyond Galaxy to the Universe",
     price: 1249,
     discountPercentage: 15.46,
     stockQuantity: 36,
@@ -81,7 +81,7 @@ const products = [
     _id: "65a7e45902e12c44f5994452",
     title: "Huawei P30",
     description:
-      "Huawei’s re-badged P30 Pro New Edition was officially unveiled yesterday in Germany and now the device has made its way to the UK.",
+        "Huawei’s re-badged P30 Pro New Edition was officially unveiled yesterday in Germany and now the device has made its way to the UK.",
     price: 499,
     discountPercentage: 10.58,
     stockQuantity: 32,
@@ -100,7 +100,7 @@ const products = [
     _id: "65a7e45902e12c44f5994453",
     title: "MacBook Pro",
     description:
-      "MacBook Pro 2021 with mini-LED display may launch between September, November",
+        "MacBook Pro 2021 with mini-LED display may launch between September, November",
     price: 1749,
     discountPercentage: 11.02,
     stockQuantity: 83,
@@ -120,7 +120,7 @@ const products = [
     _id: "65a7e45902e12c44f5994454",
     title: "Samsung Galaxy Book",
     description:
-      "Samsung Galaxy Book S (2020) Laptop With Intel Lakefield Chip, 8GB of RAM Launched",
+        "Samsung Galaxy Book S (2020) Laptop With Intel Lakefield Chip, 8GB of RAM Launched",
     price: 1499,
     discountPercentage: 4.15,
     stockQuantity: 50,
@@ -140,7 +140,7 @@ const products = [
     _id: "65a7e45902e12c44f5994455",
     title: "Microsoft Surface Laptop 4",
     description:
-      "Style and speed. Stand out on HD video calls backed by Studio Mics. Capture ideas on the vibrant touchscreen.",
+        "Style and speed. Stand out on HD video calls backed by Studio Mics. Capture ideas on the vibrant touchscreen.",
     price: 1499,
     discountPercentage: 10.23,
     stockQuantity: 68,
@@ -161,7 +161,7 @@ const products = [
     _id: "65a7e45902e12c44f5994456",
     title: "Infinix INBOOK",
     description:
-      "Infinix Inbook X1 Ci3 10th 8GB 256GB 14 Win10 Grey – 1 Year Warranty",
+        "Infinix Inbook X1 Ci3 10th 8GB 256GB 14 Win10 Grey – 1 Year Warranty",
     price: 1099,
     discountPercentage: 11.83,
     stockQuantity: 96,
@@ -182,7 +182,7 @@ const products = [
     _id: "65a7e45902e12c44f5994457",
     title: "HP Pavilion 15-DK1056WM",
     description:
-      "HP Pavilion 15-DK1056WM Gaming Laptop 10th Gen Core i5, 8GB, 256GB SSD, GTX 1650 4GB, Windows 10",
+        "HP Pavilion 15-DK1056WM Gaming Laptop 10th Gen Core i5, 8GB, 256GB SSD, GTX 1650 4GB, Windows 10",
     price: 1099,
     discountPercentage: 6.18,
     stockQuantity: 89,
@@ -202,7 +202,7 @@ const products = [
     _id: "65a7e45902e12c44f5994458",
     title: "perfume Oil",
     description:
-      "Mega Discount, Impression of Acqua Di Gio by GiorgioArmani concentrated attar perfume Oil",
+        "Mega Discount, Impression of Acqua Di Gio by GiorgioArmani concentrated attar perfume Oil",
     price: 13,
     discountPercentage: 8.4,
     stockQuantity: 65,
@@ -242,7 +242,7 @@ const products = [
     _id: "65a7e45902e12c44f599445a",
     title: "Fog Scent Xpressio Perfume",
     description:
-      "Product details of Best Fog Scent Xpressio Perfume 100ml For Men cool long lasting perfumes for Men",
+        "Product details of Best Fog Scent Xpressio Perfume 100ml For Men cool long lasting perfumes for Men",
     price: 13,
     discountPercentage: 8.14,
     stockQuantity: 61,
@@ -263,7 +263,7 @@ const products = [
     _id: "65a7e45902e12c44f599445b",
     title: "Non-Alcoholic Concentrated Perfume Oil",
     description:
-      "Original Al Munakh® by Mahal Al Musk | Our Impression of Climate | 6ml Non-Alcoholic Concentrated Perfume Oil",
+        "Original Al Munakh® by Mahal Al Musk | Our Impression of Climate | 6ml Non-Alcoholic Concentrated Perfume Oil",
     price: 120,
     discountPercentage: 15.6,
     stockQuantity: 114,
@@ -283,7 +283,7 @@ const products = [
     _id: "65a7e45902e12c44f599445c",
     title: "Eau De Perfume Spray",
     description:
-      "Genuine  Al-Rehab spray perfume from UAE/Saudi Arabia/Yemen High Quality",
+        "Genuine  Al-Rehab spray perfume from UAE/Saudi Arabia/Yemen High Quality",
     price: 30,
     discountPercentage: 10.99,
     stockQuantity: 105,
@@ -304,7 +304,7 @@ const products = [
     _id: "65a7e45902e12c44f599445d",
     title: "Hyaluronic Acid Serum",
     description:
-      "L'OrÃ©al Paris introduces Hyaluron Expert Replumping Serum formulated with 1.5% Hyaluronic Acid",
+        "L'OrÃ©al Paris introduces Hyaluron Expert Replumping Serum formulated with 1.5% Hyaluronic Acid",
     price: 19,
     discountPercentage: 13.31,
     stockQuantity: 110,
@@ -325,7 +325,7 @@ const products = [
     _id: "65a7e45902e12c44f599445e",
     title: "Tree Oil 30ml",
     description:
-      "Tea tree oil contains a number of compounds, including terpinen-4-ol, that have been shown to kill certain bacteria,",
+        "Tea tree oil contains a number of compounds, including terpinen-4-ol, that have been shown to kill certain bacteria,",
     price: 12,
     discountPercentage: 4.09,
     stockQuantity: 78,
@@ -345,7 +345,7 @@ const products = [
     _id: "65a7e45902e12c44f599445f",
     title: "Oil Free Moisturizer 100ml",
     description:
-      "Dermive Oil Free Moisturizer with SPF 20 is specifically formulated with ceramides, hyaluronic acid & sunscreen.",
+        "Dermive Oil Free Moisturizer with SPF 20 is specifically formulated with ceramides, hyaluronic acid & sunscreen.",
     price: 40,
     discountPercentage: 13.1,
     stockQuantity: 88,
@@ -366,7 +366,7 @@ const products = [
     _id: "65a7e45902e12c44f5994460",
     title: "Skin Beauty Serum.",
     description:
-      "Product name: rorec collagen hyaluronic acid white face serum riceNet weight: 15 m",
+        "Product name: rorec collagen hyaluronic acid white face serum riceNet weight: 15 m",
     price: 46,
     discountPercentage: 10.68,
     stockQuantity: 54,
@@ -386,7 +386,7 @@ const products = [
     _id: "65a7e45902e12c44f5994461",
     title: "Freckle Treatment Cream- 15gm",
     description:
-      "Fair & Clear is Pakistan's only pure Freckle cream which helpsfade Freckles, Darkspots and pigments. Mercury level is 0%, so there are no side effects.",
+        "Fair & Clear is Pakistan's only pure Freckle cream which helpsfade Freckles, Darkspots and pigments. Mercury level is 0%, so there are no side effects.",
     price: 70,
     discountPercentage: 16.99,
     stockQuantity: 140,
@@ -443,7 +443,7 @@ const products = [
     _id: "65a7e45902e12c44f5994464",
     title: "Orange Essence Food Flavou",
     description:
-      "Specifications of Orange Essence Food Flavour For Cakes and Baking Food Item",
+        "Specifications of Orange Essence Food Flavour For Cakes and Baking Food Item",
     price: 14,
     discountPercentage: 8.04,
     stockQuantity: 26,
@@ -464,7 +464,7 @@ const products = [
     _id: "65a7e45902e12c44f5994465",
     title: "cereals muesli fruit nuts",
     description:
-      "original fauji cereal muesli 250gm box pack original fauji cereals muesli fruit nuts flakes breakfast cereal break fast faujicereals cerels cerel foji fouji",
+        "original fauji cereal muesli 250gm box pack original fauji cereals muesli fruit nuts flakes breakfast cereal break fast faujicereals cerels cerel foji fouji",
     price: 46,
     discountPercentage: 16.8,
     stockQuantity: 113,
@@ -505,7 +505,7 @@ const products = [
     _id: "65a7e45902e12c44f5994467",
     title: "Plant Hanger For Home",
     description:
-      "Boho Decor Plant Hanger For Home Wall Decoration Macrame Wall Hanging Shelf",
+        "Boho Decor Plant Hanger For Home Wall Decoration Macrame Wall Hanging Shelf",
     price: 41,
     discountPercentage: 17.86,
     stockQuantity: 131,
@@ -527,7 +527,7 @@ const products = [
     _id: "65a7e45902e12c44f5994468",
     title: "Flying Wooden Bird",
     description:
-      "Package Include 6 Birds with Adhesive Tape Shape: 3D Shaped Wooden Birds Material: Wooden MDF, Laminated 3.5mm",
+        "Package Include 6 Birds with Adhesive Tape Shape: 3D Shaped Wooden Birds Material: Wooden MDF, Laminated 3.5mm",
     price: 51,
     discountPercentage: 15.58,
     stockQuantity: 17,
@@ -548,7 +548,7 @@ const products = [
     _id: "65a7e45902e12c44f5994469",
     title: "3D Embellishment Art Lamp",
     description:
-      "3D led lamp sticker Wall sticker 3d wall art light on/off button  cell operated (included)",
+        "3D led lamp sticker Wall sticker 3d wall art light on/off button  cell operated (included)",
     price: 20,
     discountPercentage: 16.49,
     stockQuantity: 54,
@@ -569,7 +569,7 @@ const products = [
     _id: "65a7e45902e12c44f599446a",
     title: "Handcraft Chinese style",
     description:
-      "Handcraft Chinese style art luxury palace hotel villa mansion home decor ceramic vase with brass fruit plate",
+        "Handcraft Chinese style art luxury palace hotel villa mansion home decor ceramic vase with brass fruit plate",
     price: 60,
     discountPercentage: 15.34,
     stockQuantity: 7,
@@ -590,7 +590,7 @@ const products = [
     _id: "65a7e45902e12c44f599446b",
     title: "Key Holder",
     description:
-      "Attractive DesignMetallic materialFour key hooksReliable & DurablePremium Quality",
+        "Attractive DesignMetallic materialFour key hooksReliable & DurablePremium Quality",
     price: 30,
     discountPercentage: 2.92,
     stockQuantity: 54,
@@ -610,7 +610,7 @@ const products = [
     _id: "65a7e45902e12c44f599446c",
     title: "Mornadi Velvet Bed",
     description:
-      "Mornadi Velvet Bed Base with Headboard Slats Support Classic Style Bedroom Furniture Bed Set",
+        "Mornadi Velvet Bed Base with Headboard Slats Support Classic Style Bedroom Furniture Bed Set",
     price: 40,
     discountPercentage: 17,
     stockQuantity: 140,
@@ -631,7 +631,7 @@ const products = [
     _id: "65a7e45902e12c44f599446d",
     title: "Sofa for Coffe Cafe",
     description:
-      "Ratttan Outdoor furniture Set Waterproof  Rattan Sofa for Coffe Cafe",
+        "Ratttan Outdoor furniture Set Waterproof  Rattan Sofa for Coffe Cafe",
     price: 50,
     discountPercentage: 15.59,
     stockQuantity: 30,
@@ -651,7 +651,7 @@ const products = [
     _id: "65a7e45902e12c44f599446e",
     title: "3 Tier Corner Shelves",
     description:
-      "3 Tier Corner Shelves | 3 PCs Wall Mount Kitchen Shelf | Floating Bedroom Shelf",
+        "3 Tier Corner Shelves | 3 PCs Wall Mount Kitchen Shelf | Floating Bedroom Shelf",
     price: 700,
     discountPercentage: 17,
     stockQuantity: 106,
@@ -672,7 +672,7 @@ const products = [
     _id: "65a7e45902e12c44f599446f",
     title: "Plastic Table",
     description:
-      "V﻿ery good quality plastic table for multi purpose now in reasonable price",
+        "V﻿ery good quality plastic table for multi purpose now in reasonable price",
     price: 50,
     discountPercentage: 4,
     stockQuantity: 136,
@@ -693,7 +693,7 @@ const products = [
     _id: "65a7e45902e12c44f5994470",
     title: "3 DOOR PORTABLE",
     description:
-      "Material: Stainless Steel and Fabric  Item Size: 110 cm x 45 cm x 175 cm Package Contents: 1 Storage Wardrobe",
+        "Material: Stainless Steel and Fabric  Item Size: 110 cm x 45 cm x 175 cm Package Contents: 1 Storage Wardrobe",
     price: 41,
     discountPercentage: 7.98,
     stockQuantity: 68,
@@ -714,7 +714,7 @@ const products = [
     _id: "65a7e45902e12c44f5994471",
     title: "Sleeve Shirt Womens",
     description:
-      "Cotton Solid Color Professional Wear Sleeve Shirt Womens Work Blouses Wholesale Clothing Casual Plain Custom Top OEM Customized",
+        "Cotton Solid Color Professional Wear Sleeve Shirt Womens Work Blouses Wholesale Clothing Casual Plain Custom Top OEM Customized",
     price: 90,
     discountPercentage: 10.89,
     stockQuantity: 39,
@@ -735,7 +735,7 @@ const products = [
     _id: "65a7e45902e12c44f5994472",
     title: "ank Tops for Womens/Girls",
     description:
-      "PACK OF 3 CAMISOLES ,VERY COMFORTABLE SOFT COTTON STUFF, COMFORTABLE IN ALL FOUR SEASONS",
+        "PACK OF 3 CAMISOLES ,VERY COMFORTABLE SOFT COTTON STUFF, COMFORTABLE IN ALL FOUR SEASONS",
     price: 50,
     discountPercentage: 12.05,
     stockQuantity: 107,
@@ -775,7 +775,7 @@ const products = [
     _id: "65a7e45902e12c44f5994474",
     title: "Women Sweaters Wool",
     description:
-      "2021 Custom Winter Fall Zebra Knit Crop Top Women Sweaters Wool Mohair Cos Customize Crew Neck Women' S Crop Top Sweater",
+        "2021 Custom Winter Fall Zebra Knit Crop Top Women Sweaters Wool Mohair Cos Customize Crew Neck Women' S Crop Top Sweater",
     price: 600,
     discountPercentage: 17.2,
     stockQuantity: 55,
@@ -796,7 +796,7 @@ const products = [
     _id: "65a7e45902e12c44f5994475",
     title: "women winter clothes",
     description:
-      "women winter clothes thick fleece hoodie top with sweat pantjogger women sweatsuit set joggers pants two piece pants set",
+        "women winter clothes thick fleece hoodie top with sweat pantjogger women sweatsuit set joggers pants two piece pants set",
     price: 57,
     discountPercentage: 13.39,
     stockQuantity: 84,
@@ -834,7 +834,7 @@ const products = [
     _id: "65a7e45902e12c44f5994477",
     title: "Stiched Kurta plus trouser",
     description:
-      "FABRIC: LILEIN CHEST: 21 LENGHT: 37 TROUSER: (38) :ARABIC LILEIN",
+        "FABRIC: LILEIN CHEST: 21 LENGHT: 37 TROUSER: (38) :ARABIC LILEIN",
     price: 80,
     discountPercentage: 15.37,
     stockQuantity: 148,
@@ -855,7 +855,7 @@ const products = [
     _id: "65a7e45902e12c44f5994478",
     title: "frock gold printed",
     description:
-      "Ghazi fabric long frock gold printed ready to wear stitched collection (G992)",
+        "Ghazi fabric long frock gold printed ready to wear stitched collection (G992)",
     price: 600,
     discountPercentage: 15.55,
     stockQuantity: 150,
@@ -876,7 +876,7 @@ const products = [
     _id: "65a7e45902e12c44f5994479",
     title: "Ladies Multicolored Dress",
     description:
-      "This classy shirt for women gives you a gorgeous look on everyday wear and specially for semi-casual wears.",
+        "This classy shirt for women gives you a gorgeous look on everyday wear and specially for semi-casual wears.",
     price: 79,
     discountPercentage: 16.88,
     stockQuantity: 2,
@@ -897,7 +897,7 @@ const products = [
     _id: "65a7e45902e12c44f599447a",
     title: "Malai Maxi Dress",
     description:
-      "Ready to wear, Unique design according to modern standard fashion, Best fitting ,Imported stuff",
+        "Ready to wear, Unique design according to modern standard fashion, Best fitting ,Imported stuff",
     price: 50,
     discountPercentage: 5.07,
     stockQuantity: 96,
@@ -918,7 +918,7 @@ const products = [
     _id: "65a7e45902e12c44f599447b",
     title: "women's shoes",
     description:
-      "Close: Lace, Style with bottom: Increased inside, Sole Material: Rubber",
+        "Close: Lace, Style with bottom: Increased inside, Sole Material: Rubber",
     price: 40,
     discountPercentage: 16.96,
     stockQuantity: 72,
@@ -939,7 +939,7 @@ const products = [
     _id: "65a7e45902e12c44f599447c",
     title: "Sneaker shoes",
     description:
-      "Synthetic Leather Casual Sneaker shoes for Women/girls Sneakers For Women",
+        "Synthetic Leather Casual Sneaker shoes for Women/girls Sneakers For Women",
     price: 120,
     discountPercentage: 10.37,
     stockQuantity: 50,
@@ -959,7 +959,7 @@ const products = [
     _id: "65a7e45902e12c44f599447d",
     title: "Women Strip Heel",
     description:
-      "Features: Flip-flops, Mid Heel, Comfortable, Striped Heel, Antiskid, Striped",
+        "Features: Flip-flops, Mid Heel, Comfortable, Striped Heel, Antiskid, Striped",
     price: 40,
     discountPercentage: 10.83,
     stockQuantity: 25,
@@ -980,7 +980,7 @@ const products = [
     _id: "65a7e45902e12c44f599447e",
     title: "Chappals & Shoe Ladies Metallic",
     description:
-      "Womens Chappals & Shoe Ladies Metallic Tong Thong Sandal Flat Summer 2020 Maasai Sandals",
+        "Womens Chappals & Shoe Ladies Metallic Tong Thong Sandal Flat Summer 2020 Maasai Sandals",
     price: 23,
     discountPercentage: 2.62,
     stockQuantity: 107,
@@ -1000,7 +1000,7 @@ const products = [
     _id: "65a7e45902e12c44f599447f",
     title: "Women Shoes",
     description:
-      "2020 New Arrivals Genuine Leather Fashion Trend Platform Summer Women Shoes",
+        "2020 New Arrivals Genuine Leather Fashion Trend Platform Summer Women Shoes",
     price: 36,
     discountPercentage: 16.87,
     stockQuantity: 46,
@@ -1019,7 +1019,7 @@ const products = [
     _id: "65a7e45902e12c44f5994480",
     title: "half sleeves T shirts",
     description:
-      "Many store is creating new designs and trend every month and every year. Daraz.pk have a beautiful range of men fashion brands",
+        "Many store is creating new designs and trend every month and every year. Daraz.pk have a beautiful range of men fashion brands",
     price: 23,
     discountPercentage: 12.76,
     stockQuantity: 132,
@@ -1039,7 +1039,7 @@ const products = [
     _id: "65a7e45902e12c44f5994481",
     title: "FREE FIRE T Shirt",
     description:
-      "quality and professional print - It doesn't just look high quality, it is high quality.",
+        "quality and professional print - It doesn't just look high quality, it is high quality.",
     price: 10,
     discountPercentage: 14.72,
     stockQuantity: 128,
@@ -1080,7 +1080,7 @@ const products = [
     _id: "65a7e45902e12c44f5994483",
     title: "Pubg Printed Graphic T-Shirt",
     description:
-      "Product Description Features: 100% Ultra soft Polyester Jersey. Vibrant & colorful printing on front. Feels soft as cotton without ever cracking",
+        "Product Description Features: 100% Ultra soft Polyester Jersey. Vibrant & colorful printing on front. Feels soft as cotton without ever cracking",
     price: 46,
     discountPercentage: 16.44,
     stockQuantity: 136,
@@ -1121,7 +1121,7 @@ const products = [
     _id: "65a7e45902e12c44f5994485",
     title: "Sneakers Joggers Shoes",
     description:
-      "Gender: Men , Colors: Same as DisplayedCondition: 100% Brand New",
+        "Gender: Men , Colors: Same as DisplayedCondition: 100% Brand New",
     price: 40,
     discountPercentage: 12.57,
     stockQuantity: 6,
@@ -1143,7 +1143,7 @@ const products = [
     _id: "65a7e45902e12c44f5994486",
     title: "Loafers for men",
     description:
-      "Men Shoes - Loafers for men - Rubber Shoes - Nylon Shoes - Shoes for men - Moccassion - Pure Nylon (Rubber) Expot Quality.",
+        "Men Shoes - Loafers for men - Rubber Shoes - Nylon Shoes - Shoes for men - Moccassion - Pure Nylon (Rubber) Expot Quality.",
     price: 47,
     discountPercentage: 10.91,
     stockQuantity: 20,
@@ -1164,7 +1164,7 @@ const products = [
     _id: "65a7e45902e12c44f5994487",
     title: "formal offices shoes",
     description:
-      "Pattern Type: Solid, Material: PU, Toe Shape: Pointed Toe ,Outsole Material: Rubber",
+        "Pattern Type: Solid, Material: PU, Toe Shape: Pointed Toe ,Outsole Material: Rubber",
     price: 57,
     discountPercentage: 12,
     stockQuantity: 68,
@@ -1185,7 +1185,7 @@ const products = [
     _id: "65a7e45902e12c44f5994488",
     title: "Spring and summershoes",
     description:
-      "Comfortable stretch cloth, lightweight body; ,rubber sole, anti-skid wear;",
+        "Comfortable stretch cloth, lightweight body; ,rubber sole, anti-skid wear;",
     price: 20,
     discountPercentage: 8.71,
     stockQuantity: 137,
@@ -1206,7 +1206,7 @@ const products = [
     _id: "65a7e45902e12c44f5994489",
     title: "Stylish Casual Jeans Shoes",
     description:
-      "High Quality ,Stylish design ,Comfortable wear ,FAshion ,Durable",
+        "High Quality ,Stylish design ,Comfortable wear ,FAshion ,Durable",
     price: 58,
     discountPercentage: 7.55,
     stockQuantity: 129,
@@ -1244,7 +1244,7 @@ const products = [
     _id: "65a7e45902e12c44f599448b",
     title: "Waterproof Leather Brand Watch",
     description:
-      "Watch Crown With Environmental IPS Bronze Electroplating; Display system of 12 hours",
+        "Watch Crown With Environmental IPS Bronze Electroplating; Display system of 12 hours",
     price: 46,
     discountPercentage: 3.15,
     stockQuantity: 95,
@@ -1262,7 +1262,7 @@ const products = [
     _id: "65a7e45902e12c44f599448c",
     title: "Royal Blue Premium Watch",
     description:
-      "Men Silver Chain Royal Blue Premium Watch Latest Analog Watch",
+        "Men Silver Chain Royal Blue Premium Watch Latest Analog Watch",
     price: 50,
     discountPercentage: 2.56,
     stockQuantity: 142,
@@ -1282,7 +1282,7 @@ const products = [
     _id: "65a7e45902e12c44f599448d",
     title: "Leather Strap Skeleton Watch",
     description:
-      "Leather Strap Skeleton Watch for Men - Stylish and Latest Design",
+        "Leather Strap Skeleton Watch for Men - Stylish and Latest Design",
     price: 46,
     discountPercentage: 10.2,
     stockQuantity: 61,
@@ -1302,7 +1302,7 @@ const products = [
     _id: "65a7e45902e12c44f599448e",
     title: "Stainless Steel Wrist Watch",
     description:
-      "Stylish Watch For Man (Luxury) Classy Men's Stainless Steel Wrist Watch - Box Packed",
+        "Stylish Watch For Man (Luxury) Classy Men's Stainless Steel Wrist Watch - Box Packed",
     price: 47,
     discountPercentage: 17.79,
     stockQuantity: 94,
@@ -1343,7 +1343,7 @@ const products = [
     _id: "65a7e45902e12c44f5994490",
     title: "Fashion Magnetic Wrist Watch",
     description:
-      "Buy this awesome  The product is originally manufactured by the company and it's a top selling product with a very reasonable",
+        "Buy this awesome  The product is originally manufactured by the company and it's a top selling product with a very reasonable",
     price: 60,
     discountPercentage: 16.69,
     stockQuantity: 46,
@@ -1364,7 +1364,7 @@ const products = [
     _id: "65a7e45902e12c44f5994491",
     title: "Stylish Luxury Digital Watch",
     description:
-      "Stylish Luxury Digital Watch For Girls / Women - Led Smart Ladies Watches For Girls",
+        "Stylish Luxury Digital Watch For Girls / Women - Led Smart Ladies Watches For Girls",
     price: 57,
     discountPercentage: 9.03,
     stockQuantity: 77,
@@ -1382,7 +1382,7 @@ const products = [
     _id: "65a7e45902e12c44f5994492",
     title: "Golden Watch Pearls Bracelet Watch",
     description:
-      "Product details of Golden Watch Pearls Bracelet Watch For Girls - Golden Chain Ladies Bracelate Watch for Women",
+        "Product details of Golden Watch Pearls Bracelet Watch For Girls - Golden Chain Ladies Bracelate Watch for Women",
     price: 47,
     discountPercentage: 17.55,
     stockQuantity: 89,
@@ -1403,7 +1403,7 @@ const products = [
     _id: "65a7e45902e12c44f5994493",
     title: "Stainless Steel Women",
     description:
-      "Fashion Skmei 1830 Shell Dial Stainless Steel Women Wrist Watch Lady Bracelet Watch Quartz Watches Ladies",
+        "Fashion Skmei 1830 Shell Dial Stainless Steel Women Wrist Watch Lady Bracelet Watch Quartz Watches Ladies",
     price: 35,
     discountPercentage: 8.98,
     stockQuantity: 111,
@@ -1422,7 +1422,7 @@ const products = [
     _id: "65a7e45902e12c44f5994494",
     title: "Women Shoulder Bags",
     description:
-      "LouisWill Women Shoulder Bags Long Clutches Cross Body Bags Phone Bags PU Leather Hand Bags Large Capacity Card Holders Zipper Coin Purses Fashion Crossbody Bags for Girls Ladies",
+        "LouisWill Women Shoulder Bags Long Clutches Cross Body Bags Phone Bags PU Leather Hand Bags Large Capacity Card Holders Zipper Coin Purses Fashion Crossbody Bags for Girls Ladies",
     price: 46,
     discountPercentage: 14.65,
     stockQuantity: 17,
@@ -1442,7 +1442,7 @@ const products = [
     _id: "65a7e45902e12c44f5994495",
     title: "Handbag For Girls",
     description:
-      "This fashion is designed to add a charming effect to your casual outfit. This Bag is made of synthetic leather.",
+        "This fashion is designed to add a charming effect to your casual outfit. This Bag is made of synthetic leather.",
     price: 23,
     discountPercentage: 17.5,
     stockQuantity: 27,
@@ -1463,7 +1463,7 @@ const products = [
     _id: "65a7e45902e12c44f5994496",
     title: "Fancy hand clutch",
     description:
-      "This fashion is designed to add a charming effect to your casual outfit. This Bag is made of synthetic leather.",
+        "This fashion is designed to add a charming effect to your casual outfit. This Bag is made of synthetic leather.",
     price: 44,
     discountPercentage: 10.39,
     stockQuantity: 101,
@@ -1483,7 +1483,7 @@ const products = [
     _id: "65a7e45902e12c44f5994497",
     title: "Leather Hand Bag",
     description:
-      "It features an attractive design that makes it a must have accessory in your collection. We sell different kind of bags for boys, kids, women, girls and also for unisex.",
+        "It features an attractive design that makes it a must have accessory in your collection. We sell different kind of bags for boys, kids, women, girls and also for unisex.",
     price: 57,
     discountPercentage: 11.19,
     stockQuantity: 43,
@@ -1504,7 +1504,7 @@ const products = [
     _id: "65a7e45902e12c44f5994498",
     title: "Seven Pocket Women Bag",
     description:
-      "Seven Pocket Women Bag Handbags Lady Shoulder Crossbody Bag Female Purse Seven Pocket Bag",
+        "Seven Pocket Women Bag Handbags Lady Shoulder Crossbody Bag Female Purse Seven Pocket Bag",
     price: 68,
     discountPercentage: 14.87,
     stockQuantity: 13,
@@ -1524,7 +1524,7 @@ const products = [
     _id: "65a7e45902e12c44f5994499",
     title: "Silver Ring Set Women",
     description:
-      "Jewelry Type:RingsCertificate Type:NonePlating:Silver PlatedShapeattern:noneStyle:CLASSICReligious",
+        "Jewelry Type:RingsCertificate Type:NonePlating:Silver PlatedShapeattern:noneStyle:CLASSICReligious",
     price: 70,
     discountPercentage: 13.57,
     stockQuantity: 51,
@@ -1543,7 +1543,7 @@ const products = [
     _id: "65a7e45902e12c44f599449a",
     title: "Rose Ring",
     description:
-      "Brand: The Greetings Flower Colour: RedRing Colour: GoldenSize: Adjustable",
+        "Brand: The Greetings Flower Colour: RedRing Colour: GoldenSize: Adjustable",
     price: 100,
     discountPercentage: 3.22,
     stockQuantity: 149,
@@ -1563,7 +1563,7 @@ const products = [
     _id: "65a7e45902e12c44f599449b",
     title: "Rhinestone Korean Style Open Rings",
     description:
-      "Fashion Jewellery 3Pcs Adjustable Pearl Rhinestone Korean Style Open Rings For Women",
+        "Fashion Jewellery 3Pcs Adjustable Pearl Rhinestone Korean Style Open Rings For Women",
     price: 30,
     discountPercentage: 8.02,
     stockQuantity: 9,
@@ -1578,7 +1578,7 @@ const products = [
     _id: "65a7e45902e12c44f599449c",
     title: "Elegant Female Pearl Earrings",
     description:
-      "Elegant Female Pearl Earrings Set Zircon Pearl Earings Women Party Accessories 9 Pairs/Set",
+        "Elegant Female Pearl Earrings Set Zircon Pearl Earings Women Party Accessories 9 Pairs/Set",
     price: 30,
     discountPercentage: 12.8,
     stockQuantity: 16,
@@ -1593,7 +1593,7 @@ const products = [
     _id: "65a7e45902e12c44f599449d",
     title: "Chain Pin Tassel Earrings",
     description:
-      "Pair Of Ear Cuff Butterfly Long Chain Pin Tassel Earrings - Silver ( Long Life Quality Product)",
+        "Pair Of Ear Cuff Butterfly Long Chain Pin Tassel Earrings - Silver ( Long Life Quality Product)",
     price: 45,
     discountPercentage: 17.75,
     stockQuantity: 9,
@@ -1614,7 +1614,7 @@ const products = [
     _id: "65a7e45902e12c44f599449e",
     title: "Round Silver Frame Sun Glasses",
     description:
-      "A pair of sunglasses can protect your eyes from being hurt. For car driving, vacation travel, outdoor activities, social gatherings,",
+        "A pair of sunglasses can protect your eyes from being hurt. For car driving, vacation travel, outdoor activities, social gatherings,",
     price: 19,
     discountPercentage: 10.1,
     stockQuantity: 78,
@@ -1635,7 +1635,7 @@ const products = [
     _id: "65a7e45902e12c44f599449f",
     title: "Kabir Singh Square Sunglass",
     description:
-      "Orignal Metal Kabir Singh design 2020 Sunglasses Men Brand Designer Sun Glasses Kabir Singh Square Sunglass",
+        "Orignal Metal Kabir Singh design 2020 Sunglasses Men Brand Designer Sun Glasses Kabir Singh Square Sunglass",
     price: 50,
     discountPercentage: 15.6,
     stockQuantity: 78,
@@ -1656,7 +1656,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a0",
     title: "Wiley X Night Vision Yellow Glasses",
     description:
-      "Wiley X Night Vision Yellow Glasses for Riders - Night Vision Anti Fog Driving Glasses - Free Night Glass Cover - Shield Eyes From Dust and Virus- For Night Sport Matches",
+        "Wiley X Night Vision Yellow Glasses for Riders - Night Vision Anti Fog Driving Glasses - Free Night Glass Cover - Shield Eyes From Dust and Virus- For Night Sport Matches",
     price: 30,
     discountPercentage: 6.33,
     stockQuantity: 115,
@@ -1677,7 +1677,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a1",
     title: "Square Sunglasses",
     description:
-      "Fashion Oversized Square Sunglasses Retro Gradient Big Frame Sunglasses For Women One Piece Gafas Shade Mirror Clear Lens 17059",
+        "Fashion Oversized Square Sunglasses Retro Gradient Big Frame Sunglasses For Women One Piece Gafas Shade Mirror Clear Lens 17059",
     price: 28,
     discountPercentage: 13.89,
     stockQuantity: 64,
@@ -1696,7 +1696,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a2",
     title: "LouisWill Men Sunglasses",
     description:
-      "LouisWill Men Sunglasses Polarized Sunglasses UV400 Sunglasses Day Night Dual Use Safety Driving Night Vision Eyewear AL-MG Frame Sun Glasses with Free Box for Drivers",
+        "LouisWill Men Sunglasses Polarized Sunglasses UV400 Sunglasses Day Night Dual Use Safety Driving Night Vision Eyewear AL-MG Frame Sun Glasses with Free Box for Drivers",
     price: 50,
     discountPercentage: 11.27,
     stockQuantity: 92,
@@ -1715,7 +1715,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a3",
     title: "Bluetooth Aux",
     description:
-      "Bluetooth Aux Bluetooth Car Aux Car Bluetooth Transmitter Aux Audio Receiver Handfree Car Bluetooth Music Receiver Universal 3.5mm Streaming A2DP Wireless Auto AUX Audio Adapter With Mic For Phone MP3",
+        "Bluetooth Aux Bluetooth Car Aux Car Bluetooth Transmitter Aux Audio Receiver Handfree Car Bluetooth Music Receiver Universal 3.5mm Streaming A2DP Wireless Auto AUX Audio Adapter With Mic For Phone MP3",
     price: 25,
     discountPercentage: 10.56,
     stockQuantity: 22,
@@ -1736,7 +1736,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a4",
     title: "t Temperature Controller Incubator Controller",
     description:
-      "Both Heat and Cool Purpose, Temperature control range; -50 to +110, Temperature measurement accuracy; 0.1, Control accuracy; 0.1",
+        "Both Heat and Cool Purpose, Temperature control range; -50 to +110, Temperature measurement accuracy; 0.1, Control accuracy; 0.1",
     price: 40,
     discountPercentage: 11.3,
     stockQuantity: 37,
@@ -1757,7 +1757,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a5",
     title: "TC Reusable Silicone Magic Washing Gloves",
     description:
-      "TC Reusable Silicone Magic Washing Gloves with Scrubber, Cleaning Brush Scrubber Gloves Heat Resistant Pair for Cleaning of Kitchen, Dishes, Vegetables and Fruits, Bathroom, Car Wash, Pet Care and Multipurpose",
+        "TC Reusable Silicone Magic Washing Gloves with Scrubber, Cleaning Brush Scrubber Gloves Heat Resistant Pair for Cleaning of Kitchen, Dishes, Vegetables and Fruits, Bathroom, Car Wash, Pet Care and Multipurpose",
     price: 29,
     discountPercentage: 3.19,
     stockQuantity: 42,
@@ -1778,7 +1778,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a6",
     title: "Qualcomm original Car Charger",
     description:
-      "best Quality CHarger , Highly Recommended to all best Quality CHarger , Highly Recommended to all",
+        "best Quality CHarger , Highly Recommended to all best Quality CHarger , Highly Recommended to all",
     price: 40,
     discountPercentage: 17.53,
     stockQuantity: 79,
@@ -1799,7 +1799,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a7",
     title: "Cycle Bike Glow",
     description:
-      "Universal fitment and easy to install no special wires, can be easily installed and removed. Fits most standard tyre air stem valves of road, mountain bicycles, motocycles and cars.Bright led will turn on w",
+        "Universal fitment and easy to install no special wires, can be easily installed and removed. Fits most standard tyre air stem valves of road, mountain bicycles, motocycles and cars.Bright led will turn on w",
     price: 35,
     discountPercentage: 11.08,
     stockQuantity: 63,
@@ -1820,7 +1820,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a8",
     title: "Black Motorbike",
     description:
-      "Engine Type:Wet sump, Single Cylinder, Four Stroke, Two Valves, Air Cooled with SOHC (Single Over Head Cam) Chain Drive Bore & Stroke:47.0 x 49.5 MM",
+        "Engine Type:Wet sump, Single Cylinder, Four Stroke, Two Valves, Air Cooled with SOHC (Single Over Head Cam) Chain Drive Bore & Stroke:47.0 x 49.5 MM",
     price: 569,
     discountPercentage: 13.63,
     stockQuantity: 115,
@@ -1841,7 +1841,7 @@ const products = [
     _id: "65a7e45902e12c44f59944a9",
     title: "HOT SALE IN EUROPE electric racing motorcycle",
     description:
-      "HOT SALE IN EUROPE electric racing motorcycle electric motorcycle for sale adult electric motorcycles",
+        "HOT SALE IN EUROPE electric racing motorcycle electric motorcycle for sale adult electric motorcycles",
     price: 920,
     discountPercentage: 14.4,
     stockQuantity: 22,
@@ -1861,7 +1861,7 @@ const products = [
     _id: "65a7e45902e12c44f59944aa",
     title: "Automatic Motor Gas Motorcycles",
     description:
-      "150cc 4-Stroke Motorcycle Automatic Motor Gas Motorcycles Scooter motorcycles 150cc scooter",
+        "150cc 4-Stroke Motorcycle Automatic Motor Gas Motorcycles Scooter motorcycles 150cc scooter",
     price: 1050,
     discountPercentage: 3.34,
     stockQuantity: 127,
@@ -1882,7 +1882,7 @@ const products = [
     _id: "65a7e45902e12c44f59944ab",
     title: "new arrivals Fashion motocross goggles",
     description:
-      "new arrivals Fashion motocross goggles motorcycle motocross racing motorcycle",
+        "new arrivals Fashion motocross goggles motorcycle motocross racing motorcycle",
     price: 900,
     discountPercentage: 3.85,
     stockQuantity: 109,
@@ -1902,7 +1902,7 @@ const products = [
     _id: "65a7e45902e12c44f59944ac",
     title: "Wholesale cargo lashing Belt",
     description:
-      "Wholesale cargo lashing Belt Tie Down end Ratchet strap customized strap 25mm motorcycle 1500kgs with rubber handle",
+        "Wholesale cargo lashing Belt Tie Down end Ratchet strap customized strap 25mm motorcycle 1500kgs with rubber handle",
     price: 930,
     discountPercentage: 17.67,
     stockQuantity: 144,
@@ -1923,7 +1923,7 @@ const products = [
     _id: "65a7e45902e12c44f59944ad",
     title: "lighting ceiling kitchen",
     description:
-      "Wholesale slim hanging decorative kid room lighting ceiling kitchen chandeliers pendant light modern",
+        "Wholesale slim hanging decorative kid room lighting ceiling kitchen chandeliers pendant light modern",
     price: 30,
     discountPercentage: 14.89,
     stockQuantity: 96,
@@ -1944,7 +1944,7 @@ const products = [
     _id: "65a7e45902e12c44f59944ae",
     title: "Metal Ceramic Flower",
     description:
-      "Metal Ceramic Flower Chandelier Home Lighting American Vintage Hanging Lighting Pendant Lamp",
+        "Metal Ceramic Flower Chandelier Home Lighting American Vintage Hanging Lighting Pendant Lamp",
     price: 35,
     discountPercentage: 10.94,
     stockQuantity: 146,
@@ -1965,7 +1965,7 @@ const products = [
     _id: "65a7e45902e12c44f59944af",
     title: "3 lights lndenpant kitchen islang",
     description:
-      "3 lights lndenpant kitchen islang dining room pendant rice paper chandelier contemporary led pendant light modern chandelier",
+        "3 lights lndenpant kitchen islang dining room pendant rice paper chandelier contemporary led pendant light modern chandelier",
     price: 34,
     discountPercentage: 5.92,
     stockQuantity: 44,
@@ -1986,7 +1986,7 @@ const products = [
     _id: "65a7e45902e12c44f59944b0",
     title: "American Vintage Wood Pendant Light",
     description:
-      "American Vintage Wood Pendant Light Farmhouse Antique Hanging Lamp Lampara Colgante",
+        "American Vintage Wood Pendant Light Farmhouse Antique Hanging Lamp Lampara Colgante",
     price: 46,
     discountPercentage: 8.84,
     stockQuantity: 138,
@@ -2026,6 +2026,7 @@ const products = [
 
 exports.seedProduct = async () => {
   try {
+    await Product.deleteMany({});
     await Product.insertMany(products);
     console.log("Product seeded successfully");
   } catch (error) {
