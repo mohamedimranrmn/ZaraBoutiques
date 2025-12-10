@@ -5,18 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="648b27b4-a3dc-43d2-8d43-c10ce5238468" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/backend/routes/imagekit-auth.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/utils/uploadFile.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/controllers/Cart.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/controllers/Cart.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models/Cart.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models/Cart.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/checkout/components/Checkout.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/checkout/components/Checkout.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/products/components/ProductCard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/products/components/ProductCard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/products/components/ProductList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/products/components/ProductList.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/wishlist/components/Wishlist.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/wishlist/components/Wishlist.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/components/AddProduct.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/components/AddProduct.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/components/ProductUpdate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/components/ProductUpdate.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -57,6 +67,11 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\mnmoh\WebstormProjects\ZaraBoutiques\frontend\src" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -72,7 +87,9 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1764506987538</updated>
-      <workItem from="1764506988936" duration="22032000" />
+      <workItem from="1764506988936" duration="22627000" />
+      <workItem from="1764684509593" duration="97000" />
+      <workItem from="1765384921150" duration="6392000" />
     </task>
     <servers />
   </component>

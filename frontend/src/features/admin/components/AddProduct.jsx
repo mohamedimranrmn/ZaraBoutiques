@@ -43,11 +43,9 @@ import ClearIcon from "@mui/icons-material/Clear";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SaveIcon from "@mui/icons-material/Save";
-import HomeIcon from "@mui/icons-material/Home";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
-import { storage } from "../../../firebase/client";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+// NEW IMPORT
+import { uploadToImageKit } from "../../../utils/uploadFile";
 
 export const AddProduct = () => {
     const {
@@ -66,7 +64,6 @@ export const AddProduct = () => {
     const categories = useSelector(selectCategories);
     const productAddStatus = useSelector(selectProductAddStatus);
 
-    // Local state for "Option B"
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [thumbnailPreview, setThumbnailPreview] = useState(null);
 
@@ -74,10 +71,8 @@ export const AddProduct = () => {
     const [imagePreviews, setImagePreviews] = useState([null, null, null, null]);
 
     const [selectedSizes, setSelectedSizes] = useState([]);
-
     const selectedCategory = watch("category");
 
-    // Loader state
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -139,15 +134,15 @@ export const AddProduct = () => {
         setThumbnailPreview(URL.createObjectURL(file));
     };
 
-    // Product images
+    // Product image handler
     const handleProductImageChange = (e, index) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const updatedFiles = [...productFiles];
-        updatedFiles[index] = file;
-
         const updatedPreviews = [...imagePreviews];
+
+        updatedFiles[index] = file;
         updatedPreviews[index] = URL.createObjectURL(file);
 
         setProductFiles(updatedFiles);
@@ -176,56 +171,41 @@ export const AddProduct = () => {
         );
     };
 
-    // Upload on submit
+    // NEW — Upload using ImageKit
+    const uploadAllImagesToImageKit = async () => {
+        const files = [thumbnailFile, ...productFiles.filter((f) => f !== null)];
+        const total = files.length;
+
+        const urls = [];
+        let completed = 0;
+
+        for (const file of files) {
+            const url = await uploadToImageKit(file);
+            completed += 1;
+            setUploadProgress(Math.round((completed / total) * 100));
+            urls.push(url);
+        }
+
+        return urls;
+    };
+
     const handleAddProduct = async (data) => {
         try {
-            if (!thumbnailFile)
-                return toast.error("Thumbnail is required");
+            if (!thumbnailFile) return toast.error("Thumbnail is required");
 
-            const validImageFiles = productFiles.filter((f) => f !== null);
-            if (validImageFiles.length === 0)
+            const validFiles = productFiles.filter((f) => f !== null);
+            if (validFiles.length === 0)
                 return toast.error("Upload at least one product image");
 
             if (availableSizes.length > 0 && selectedSizes.length === 0)
                 return toast.error("Select at least one size");
 
-            // Begin Upload
             setUploading(true);
             setUploadProgress(0);
 
-            const allFiles = [thumbnailFile, ...validImageFiles];
+            const uploadedUrls = await uploadAllImagesToImageKit();
 
-            // Total bytes
-            const totalBytes = allFiles.reduce((sum, f) => sum + f.size, 0);
-            let uploadedBytes = 0;
-
-            const urls = [];
-
-            for (const file of allFiles) {
-                const fileRef = ref(storage, `products/${Date.now()}_${file.name}`);
-                const uploadTask = uploadBytesResumable(fileRef, file);
-
-                await new Promise((resolve, reject) => {
-                    uploadTask.on(
-                        "state_changed",
-                        (snap) => {
-                            const overall = Math.round(
-                                ((uploadedBytes + snap.bytesTransferred) / totalBytes) * 100
-                            );
-                            setUploadProgress(overall);
-                        },
-                        reject,
-                        async () => {
-                            const url = await getDownloadURL(uploadTask.snapshot.ref);
-                            urls.push(url);
-                            uploadedBytes += file.size;
-                            resolve();
-                        }
-                    );
-                });
-            }
-
-            const [thumbnailUrl, ...imagesUrls] = urls;
+            const [thumbnailUrl, ...imagesUrls] = uploadedUrls;
 
             const payload = {
                 ...data,
@@ -238,18 +218,17 @@ export const AddProduct = () => {
             };
 
             dispatch(addProductAsync(payload));
-
         } catch (err) {
-            console.error("Upload error:", err);
-            toast.error("Upload failed.");
+            console.error(err);
+            toast.error("Image upload failed.");
         } finally {
             setUploading(false);
         }
     };
 
     return (
-        <Box sx={{ bgcolor: "#fafafa", minHeight: "100vh", pb: isMobile ? 12 : 4 }}>
-            {/* HEADER */}
+        <Box sx={{ bgcolor: "#fafafa", minHeight: "100vh", pb: isMobile ? 12 : 8 }}>
+            {/* Header */}
             <Box
                 sx={{
                     bgcolor: "white",
@@ -266,20 +245,16 @@ export const AddProduct = () => {
                         <ArrowBackIcon />
                     </IconButton>
 
-                    <Box>
-                        <Typography variant={isMobile ? "h6" : "h5"} fontWeight={600}>
-                            Add New Product
-                        </Typography>
-                    </Box>
+                    <Typography variant={isMobile ? "h6" : "h5"} fontWeight={600}>
+                        Add New Product
+                    </Typography>
                 </Stack>
             </Box>
 
-            {/* CONTENT */}
             <Box sx={{ maxWidth: "1200px", mx: "auto", px: 2, mt: 3 }}>
                 <form onSubmit={handleSubmit(handleAddProduct)}>
                     <Grid container spacing={3}>
-
-                        {/* BASIC INFO */}
+                        {/* Basic Info */}
                         <Grid item xs={12}>
                             <Card elevation={0} sx={{ border: "1px solid #e5e7eb" }}>
                                 <CardContent>
@@ -288,7 +263,6 @@ export const AddProduct = () => {
                                     </Typography>
 
                                     <Grid container spacing={2}>
-
                                         <Grid item xs={12}>
                                             <TextField
                                                 fullWidth
@@ -299,7 +273,7 @@ export const AddProduct = () => {
                                             />
                                         </Grid>
 
-                                        {/* BRAND */}
+                                        {/* Brand */}
                                         <Grid item xs={12} sm={6}>
                                             <FormControl fullWidth error={!!errors.brand}>
                                                 <InputLabel>Brand *</InputLabel>
@@ -317,7 +291,7 @@ export const AddProduct = () => {
                                             </FormControl>
                                         </Grid>
 
-                                        {/* CATEGORY */}
+                                        {/* Category */}
                                         <Grid item xs={12} sm={6}>
                                             <FormControl fullWidth error={!!errors.category}>
                                                 <InputLabel>Category *</InputLabel>
@@ -351,14 +325,13 @@ export const AddProduct = () => {
                             </Card>
                         </Grid>
 
-                        {/* PRICING */}
+                        {/* Pricing */}
                         <Grid item xs={12}>
                             <Card elevation={0} sx={{ border: "1px solid #e5e7eb" }}>
                                 <CardContent>
                                     <Typography variant="h6" fontWeight={600} mb={3}>
                                         Pricing & Stock
                                     </Typography>
-
                                     <Grid container spacing={2}>
                                         <Grid item xs={12} sm={4}>
                                             <TextField
@@ -392,7 +365,7 @@ export const AddProduct = () => {
                             </Card>
                         </Grid>
 
-                        {/* SIZES */}
+                        {/* Sizes */}
                         {availableSizes.length > 0 && (
                             <Grid item xs={12}>
                                 <Card elevation={0} sx={{ border: "1px solid #e5e7eb" }}>
@@ -431,7 +404,7 @@ export const AddProduct = () => {
                             </Grid>
                         )}
 
-                        {/* IMAGES */}
+                        {/* Images */}
                         <Grid item xs={12}>
                             <Card elevation={0} sx={{ border: "1px solid #e5e7eb" }}>
                                 <CardContent>
@@ -439,7 +412,7 @@ export const AddProduct = () => {
                                         Product Images
                                     </Typography>
 
-                                    {/* THUMBNAIL */}
+                                    {/* Thumbnail */}
                                     <Box mb={3}>
                                         <Typography fontWeight={600} mb={2}>
                                             Thumbnail Image *
@@ -452,7 +425,12 @@ export const AddProduct = () => {
                                                 startIcon={<PhotoCamera />}
                                             >
                                                 {thumbnailPreview ? "Change" : "Upload"}
-                                                <input hidden type="file" accept="image/*" onChange={handleThumbnailChange} />
+                                                <input
+                                                    hidden
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleThumbnailChange}
+                                                />
                                             </Button>
 
                                             {thumbnailPreview && (
@@ -474,6 +452,7 @@ export const AddProduct = () => {
                                                             borderRadius: 8,
                                                         }}
                                                     />
+
                                                     <IconButton
                                                         size="small"
                                                         onClick={handleRemoveThumbnail}
@@ -494,7 +473,7 @@ export const AddProduct = () => {
 
                                     <Divider sx={{ my: 3 }} />
 
-                                    {/* ADDITIONAL IMAGES */}
+                                    {/* Additional Images */}
                                     <Typography fontWeight={600} mb={2}>
                                         Additional Images *
                                     </Typography>
@@ -529,6 +508,7 @@ export const AddProduct = () => {
                                                                     borderRadius: 8,
                                                                 }}
                                                             />
+
                                                             <IconButton
                                                                 size="small"
                                                                 onClick={() => handleRemoveProductImage(idx)}
@@ -557,11 +537,14 @@ export const AddProduct = () => {
                                                             <Typography variant="caption">
                                                                 Image {idx + 1}
                                                             </Typography>
+
                                                             <input
                                                                 hidden
                                                                 type="file"
                                                                 accept="image/*"
-                                                                onChange={(e) => handleProductImageChange(e, idx)}
+                                                                onChange={(e) =>
+                                                                    handleProductImageChange(e, idx)
+                                                                }
                                                             />
                                                         </Button>
                                                     )}
@@ -572,11 +555,40 @@ export const AddProduct = () => {
                                 </CardContent>
                             </Card>
                         </Grid>
+
+                        {/* Desktop Save Button */}
+                        {!isMobile && (
+                            <Grid item xs={12}>
+                                <Stack direction="row" justifyContent="flex-end" mt={2}>
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        size="large"
+                                        disabled={uploading}
+                                        sx={{ px: 4 }}
+                                    >
+                                        {uploading ? (
+                                            <>
+                                                Uploading...
+                                                <Box sx={{ width: 200, ml: 2 }}>
+                                                    <LinearProgress
+                                                        variant="determinate"
+                                                        value={uploadProgress}
+                                                    />
+                                                </Box>
+                                            </>
+                                        ) : (
+                                            "Save Product"
+                                        )}
+                                    </Button>
+                                </Stack>
+                            </Grid>
+                        )}
                     </Grid>
                 </form>
             </Box>
 
-            {/* MOBILE SAVE BUTTON */}
+            {/* Mobile Floating Save Button */}
             {isMobile && (
                 <Box
                     sx={{
@@ -584,7 +596,7 @@ export const AddProduct = () => {
                         bottom: 0,
                         width: "100%",
                         height: 70,
-                        bgcolor: "rgba(255,255,255,0.8)",
+                        bgcolor: "rgba(255,255,255,0.9)",
                         backdropFilter: "blur(10px)",
                         zIndex: 1500,
                     }}

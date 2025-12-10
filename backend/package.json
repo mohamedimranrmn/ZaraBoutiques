@@ -24,6 +24,7 @@
     "firebase": "^12.6.0",
     "firebase-admin": "^13.6.0",
     "google-auth-library": "^10.5.0",
+    "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.2",
     "morgan": "^1.10.0",
