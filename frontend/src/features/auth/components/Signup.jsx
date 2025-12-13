@@ -26,6 +26,7 @@ import {
     clearSignupError,
     resetSignupStatus
 } from '../AuthSlice';
+import Snowfall from "react-snowfall";
 
 export const Signup = () => {
     const dispatch = useDispatch();
@@ -108,6 +109,7 @@ export const Signup = () => {
                     display: is900 ? 'flex' : 'flex'
                 }}
             >
+                <Snowfall color="grey" enable3DRotation={true} snowflakeCount={500}/>
                 <Box
                     sx={{
                         width: '100%',

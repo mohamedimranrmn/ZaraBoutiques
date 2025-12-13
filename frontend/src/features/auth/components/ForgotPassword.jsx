@@ -1,12 +1,11 @@
 import {
+    Box,
     FormHelperText,
-    Paper,
     Stack,
     TextField,
     Typography,
     useMediaQuery,
-    useTheme,
-    Box
+    useTheme
 } from '@mui/material';
 import React, { useEffect } from 'react';
 import { toast } from 'react-toastify';
@@ -23,7 +22,10 @@ import {
 } from '../AuthSlice';
 import { LoadingButton } from '@mui/lab';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
+import Lottie from 'lottie-react';
+import { ecommerceOutlookAnimation } from '../../../assets';
+import Snowfall from 'react-snowfall';
 
 export const ForgotPassword = () => {
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
@@ -33,7 +35,8 @@ export const ForgotPassword = () => {
     const successMessage = useSelector(selectForgotPasswordSuccessMessage);
 
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("600"));
+    const is900 = useMediaQuery(theme.breakpoints.down(900));
+    const is480 = useMediaQuery(theme.breakpoints.down(480));
 
     /* -------------------- Toast Handlers -------------------- */
     useEffect(() => {
@@ -57,135 +60,163 @@ export const ForgotPassword = () => {
 
     return (
         <Stack
-            width="100vw"
-            height="100vh"
-            justifyContent="center"
-            alignItems="center"
-            sx={{ bgcolor: "#fafafa" }}
+            width={'100vw'}
+            height={'100vh'}
+            flexDirection={is900 ? 'column' : 'row'}
+            sx={{ overflowY: is900 ? 'auto' : 'hidden' }}
         >
-
-            {/* -------------------- CONTAINER -------------------- */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                style={{ width: "100%", display: "flex", justifyContent: "center" }}
+            {/* Left Animation Section */}
+            <Stack
+                bgcolor={'black'}
+                flex={1}
+                justifyContent={'center'}
+                alignItems={'center'}
+                sx={{
+                    height: is900 ? 'auto' : 'auto',
+                    minHeight: is900 ? '250px' : 'auto',
+                    py: is900 ? 3 : 0,
+                    px: is900 ? 2 : 0
+                }}
             >
-                <Paper
-                    elevation={3}
+                <Snowfall color="grey" enable3DRotation={true} snowflakeCount={500}/>
+                <Box
                     sx={{
-                        width: isMobile ? "90%" : "420px",
-                        borderRadius: 3,
-                        p: isMobile ? 3 : 4,
-                        backdropFilter: "blur(8px)",
+                        width: '100%',
+                        maxWidth: is900 ? '400px' : '100%',
+                        height: is900 ? 'auto' : '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}
                 >
-                    <Stack spacing={3}>
+                    <Lottie
+                        animationData={ecommerceOutlookAnimation}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            maxHeight: is900 ? '300px' : 'none'
+                        }}
+                    />
+                </Box>
+            </Stack>
 
-                        {/* -------------------- HEADER -------------------- */}
-                        <Stack spacing={1}>
-                            <Typography
-                                variant={isMobile ? "h5" : "h4"}
-                                fontWeight={700}
-                            >
-                                {status === "fullfilled"
-                                    ? "Email Sent!"
-                                    : "Forgot Your Password?"}
-                            </Typography>
+            {/* Right Form Section */}
+            <Stack
+                flex={1}
+                justifyContent={'center'}
+                alignItems={'center'}
+                sx={{ py: is900 ? 4 : 0 }}
+            >
+                {/* Forgot Password Form */}
+                <Stack
+                    mt={4}
+                    spacing={2}
+                    width={is480 ? '95vw' : '28rem'}
+                >
+                    {/* Header Section */}
+                    <Stack spacing={1}>
+                        <Typography
+                            variant={is480 ? "h5" : "h4"}
+                            fontWeight={700}
+                        >
+                            {status === "fullfilled"
+                                ? "Email Sent!"
+                                : "Forgot Your Password?"}
+                        </Typography>
 
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ lineHeight: 1.6 }}
-                            >
-                                {status === "fullfilled"
-                                    ? "Please check your email and click the link we sent to reset your password."
-                                    : "Enter your registered email address and we’ll send you a password reset link."}
-                            </Typography>
-                        </Stack>
-
-                        {/* -------------------- FORM -------------------- */}
-                        {status !== "fullfilled" && (
-                            <Stack
-                                component="form"
-                                spacing={2}
-                                noValidate
-                                onSubmit={handleSubmit(handleForgotPassword)}
-                            >
-                                {/* Email Input */}
-                                <motion.div whileHover={{ scale: 1.01 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="medium"
-                                        label="Email Address"
-                                        placeholder="Enter your email"
-                                        {...register("email", {
-                                            required: "Email is required",
-                                            pattern: {
-                                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                                message: "Enter a valid email"
-                                            }
-                                        })}
-                                        sx={{
-                                            "& .MuiOutlinedInput-root": {
-                                                borderRadius: 2,
-                                            }
-                                        }}
-                                    />
-                                    {errors.email && (
-                                        <FormHelperText error sx={{ mt: 0.8 }}>
-                                            {errors.email.message}
-                                        </FormHelperText>
-                                    )}
-                                </motion.div>
-
-                                {/* Submit Button */}
-                                <motion.div whileHover={{ scale: 1.01 }}>
-                                    <LoadingButton
-                                        fullWidth
-                                        loading={status === "pending"}
-                                        type="submit"
-                                        variant="contained"
-                                        sx={{
-                                            height: "3rem",
-                                            borderRadius: 2,
-                                            textTransform: "none",
-                                            fontSize: "1rem",
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        Send Reset Link
-                                    </LoadingButton>
-                                </motion.div>
-                            </Stack>
-                        )}
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ lineHeight: 1.6 }}
+                        >
+                            {status === "fullfilled"
+                                ? "Please check your email and click the link we sent to reset your password."
+                                : "Enter your registered email address and we'll send you a password reset link."}
+                        </Typography>
                     </Stack>
-                </Paper>
-            </motion.div>
 
-            {/* -------------------- BACK TO LOGIN -------------------- */}
-            <motion.div
-                whileHover={{ x: 3 }}
-                whileTap={{ scale: 0.98 }}
-                style={{ marginTop: "1.5rem" }}
-            >
-                <Typography
-                    component={Link}
-                    to="/login"
-                    variant="body2"
-                    sx={{
-                        textDecoration: "none",
-                        color: "text.primary",
-                        fontWeight: 500
-                    }}
-                >
-                    Go back to{" "}
-                    <span style={{ color: theme.palette.primary.main, fontWeight: 700 }}>
-                        Login
-                    </span>
-                </Typography>
-            </motion.div>
+                    {/* Form */}
+                    {status !== "fullfilled" && (
+                        <Stack
+                            component={'form'}
+                            spacing={2}
+                            noValidate
+                            onSubmit={handleSubmit(handleForgotPassword)}
+                        >
+                            {/* Email Input */}
+                            <motion.div whileHover={{ y: -5 }}>
+                                <TextField
+                                    fullWidth
+                                    placeholder='Email'
+                                    {...register("email", {
+                                        required: "Email is required",
+                                        pattern: {
+                                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                            message: "Enter a valid email"
+                                        }
+                                    })}
+                                />
+                                {errors.email && (
+                                    <FormHelperText error sx={{ mt: 1 }}>
+                                        {errors.email.message}
+                                    </FormHelperText>
+                                )}
+                            </motion.div>
 
+                            {/* Submit Button */}
+                            <motion.div
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 1 }}
+                            >
+                                <LoadingButton
+                                    fullWidth
+                                    loading={status === "pending"}
+                                    type="submit"
+                                    variant="contained"
+                                    sx={{
+                                        height: '2.8rem',
+                                        backgroundColor: '#DB4444',
+                                        '&:hover': { backgroundColor: '#b73535' },
+                                    }}
+                                >
+                                    Send Reset Link
+                                </LoadingButton>
+                            </motion.div>
+                        </Stack>
+                    )}
+
+                    {/* Links Section */}
+                    <Stack
+                        mt={1}
+                        width="100%"
+                        alignItems="flex-start"
+                    >
+                        <MotionConfig whileHover={{ x: 2 }} whileTap={{ scale: 1.05 }}>
+                            <motion.div>
+                                <Typography
+                                    sx={{ textDecoration: 'none', color: 'text.primary' }}
+                                    to={'/login'}
+                                    component={Link}
+                                >
+                                    Remember your password?{' '}
+                                    <span style={{ color: theme.palette.primary.dark }}>Login</span>
+                                </Typography>
+                            </motion.div>
+
+                            <motion.div style={{ marginTop: '0.5rem' }}>
+                                <Typography
+                                    sx={{ textDecoration: 'none', color: 'text.primary' }}
+                                    to={'/signup'}
+                                    component={Link}
+                                >
+                                    Don't have an account?{' '}
+                                    <span style={{ color: theme.palette.primary.dark }}>Register</span>
+                                </Typography>
+                            </motion.div>
+                        </MotionConfig>
+                    </Stack>
+                </Stack>
+            </Stack>
         </Stack>
     );
 };

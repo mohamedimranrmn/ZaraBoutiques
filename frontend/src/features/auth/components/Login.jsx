@@ -26,6 +26,7 @@ import {
     clearLoginError,
     resetLoginStatus
 } from '../AuthSlice';
+import Snowfall from 'react-snowfall'
 
 export const Login = () => {
     const [googleLoading, setGoogleLoading] = React.useState(false);
@@ -136,6 +137,7 @@ export const Login = () => {
                     px: is900 ? 2 : 0
                 }}
             >
+                <Snowfall color="grey" enable3DRotation={true} snowflakeCount={500}/>
                 <Box
                     sx={{
                         width: '100%',

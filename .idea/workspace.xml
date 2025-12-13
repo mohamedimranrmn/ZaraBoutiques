@@ -5,16 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="648b27b4-a3dc-43d2-8d43-c10ce5238468" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/backend/routes/imagekit-auth.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/utils/uploadFile.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/components/AddProduct.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/components/AddProduct.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/features/admin/components/ProductUpdate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/admin/components/ProductUpdate.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/auth/components/ForgotPassword.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/auth/components/ForgotPassword.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/auth/components/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/auth/components/Login.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/auth/components/Signup.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/auth/components/Signup.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/features/products/components/ProductList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/features/products/components/ProductList.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,7 +86,8 @@
       <updated>1764506987538</updated>
       <workItem from="1764506988936" duration="22627000" />
       <workItem from="1764684509593" duration="97000" />
-      <workItem from="1765384921150" duration="6392000" />
+      <workItem from="1765384921150" duration="7008000" />
+      <workItem from="1765535933779" duration="2039000" />
     </task>
     <servers />
   </component>

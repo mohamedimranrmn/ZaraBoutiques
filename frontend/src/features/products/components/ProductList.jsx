@@ -67,6 +67,7 @@ import { ProductCard } from "./ProductCard";
 import Lottie from "lottie-react";
 import NotFoundSearch from "../../../assets/animations/NotFoundSearch.json";
 
+
 import { ITEMS_PER_PAGE } from "../../../constants/index";
 
 /* Sort options */
